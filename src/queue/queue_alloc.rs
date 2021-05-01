@@ -1,7 +1,10 @@
-use alloc::sync::{Arc, Weak};
-use crate::queue::{Queue, AsyncQueue, PrependQueue, AsyncPrependQueue, AsyncReverseQueue, ReverseQueue, DoubleEndedQueue};
+use crate::queue::{
+    AsyncPrependQueue, AsyncQueue, AsyncReverseQueue, DoubleEndedQueue, PrependQueue, Queue,
+    ReverseQueue,
+};
 use crate::ThreadSpawner;
 use alloc::collections::VecDeque;
+use alloc::sync::{Arc, Weak};
 use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 use simple_futures::value_future::{ValueFuture, ValueFutureHandle};
 

@@ -1,11 +1,11 @@
 use crate::mutex::*;
-use core::pin::Pin;
-use alloc::boxed::Box;
-use core::future::Future;
-use core::time::Duration;
-use alloc::sync::{Arc, Weak};
 use crate::queue::Queue;
 use crate::ThreadSpawner;
+use alloc::boxed::Box;
+use alloc::sync::{Arc, Weak};
+use core::future::Future;
+use core::pin::Pin;
+use core::time::Duration;
 use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 
 /// The functions for [`AsyncMutex`] that only work for sized types.
@@ -144,7 +144,7 @@ where
 {
     /// Creates a new [`RawCustomAsyncMutex`] from a [`RawMutex`] and a message
     /// queue.
-    pub fn new(raw_mutex: M, message_queue: Q, spawner: impl ThreadSpawner) -> Self{
+    pub fn new(raw_mutex: M, message_queue: Q, spawner: impl ThreadSpawner) -> Self {
         let out = Self {
             inner: Arc::new(RawCustomAsyncMutexInner {
                 raw_mutex,
@@ -166,8 +166,7 @@ where
                         Some(true) => panic!("Future was completed already!"),
                         Some(false) => {}
                     }
-                }
-                // RawCustomAsyncMutexMessage::LockTimeout { .. } => unreachable!(),
+                } // RawCustomAsyncMutexMessage::LockTimeout { .. } => unreachable!(),
             }
         }
     }

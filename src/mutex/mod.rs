@@ -342,27 +342,29 @@ where
 }
 
 #[cfg(test)]
-mod test{
-    use crate::mutex::{RawTryMutex, CustomMutex, TryMutex, TryMutexSized, RawMutex, Mutex, MutexSized};
-    use std::sync::atomic::{AtomicBool, Ordering, AtomicUsize};
-    use std::ops::{Deref, DerefMut};
-    use std::sync::{Condvar, self, Arc};
+mod test {
+    use crate::mutex::{
+        CustomMutex, Mutex, MutexSized, RawMutex, RawTryMutex, TryMutex, TryMutexSized,
+    };
     use std::mem::swap;
-    use std::thread::{spawn, sleep};
+    use std::ops::{Deref, DerefMut};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::sync::{self, Arc, Condvar};
+    use std::thread::{sleep, spawn};
     use std::time::Duration;
 
     // True if unlocked
-    struct AtomicTryMutex{
+    struct AtomicTryMutex {
         unlocked: AtomicBool,
     }
-    impl Default for AtomicTryMutex{
+    impl Default for AtomicTryMutex {
         fn default() -> Self {
-            Self{
+            Self {
                 unlocked: AtomicBool::new(true),
             }
         }
     }
-    impl RawTryMutex for AtomicTryMutex{
+    impl RawTryMutex for AtomicTryMutex {
         fn try_lock(&self) -> bool {
             self.unlocked.swap(false, Ordering::SeqCst)
         }
@@ -372,13 +374,16 @@ mod test{
         }
     }
     #[test]
-    fn try_mutex_test(){
+    fn try_mutex_test() {
         let custom_mutex: CustomMutex<_, AtomicTryMutex> = CustomMutex::new(100);
-        assert_eq!(custom_mutex.try_lock().map(|guard|*guard.deref()), Some(100));
+        assert_eq!(
+            custom_mutex.try_lock().map(|guard| *guard.deref()),
+            Some(100)
+        );
         let mut guard = custom_mutex.try_lock().expect("Could not lock!");
         *guard.deref_mut() = 200;
         drop(guard);
-        custom_mutex.try_lock_func(|guard|{
+        custom_mutex.try_lock_func(|guard| {
             let value = guard.expect("Could not lock");
             assert_eq!(*value, 200);
             *value = 300;
@@ -394,7 +399,7 @@ mod test{
     }
     impl Default for TestMutex {
         fn default() -> Self {
-            Self{
+            Self {
                 unlocked: sync::Mutex::new(true),
                 parkers: Condvar::new(),
             }
@@ -403,13 +408,19 @@ mod test{
     impl RawTryMutex for TestMutex {
         fn try_lock(&self) -> bool {
             let mut out = false;
-            swap(self.unlocked.lock().expect("Poisoned").deref_mut(), &mut out);
+            swap(
+                self.unlocked.lock().expect("Poisoned").deref_mut(),
+                &mut out,
+            );
             out
         }
 
         unsafe fn unlock(&self) {
             let mut out = true;
-            swap(self.unlocked.lock().expect("Poisoned").deref_mut(), &mut out);
+            swap(
+                self.unlocked.lock().expect("Poisoned").deref_mut(),
+                &mut out,
+            );
             assert!(!out);
             self.parkers.notify_one();
         }
@@ -419,23 +430,30 @@ mod test{
             let mut guard = self.unlocked.lock().expect("Poisoned");
             let mut out = false;
             swap(guard.deref_mut(), &mut out);
-            if !out{
-                drop(self.parkers.wait_while(guard, |val|{
-                    let mut out = false;
-                    swap(val, &mut out);
-                    !out
-                }).expect("Poisoned"));
+            if !out {
+                drop(
+                    self.parkers
+                        .wait_while(guard, |val| {
+                            let mut out = false;
+                            swap(val, &mut out);
+                            !out
+                        })
+                        .expect("Poisoned"),
+                );
             }
         }
     }
     #[test]
-    fn mutex_test(){
+    fn mutex_test() {
         let custom_mutex: CustomMutex<_, TestMutex> = CustomMutex::new(100);
-        assert_eq!(custom_mutex.try_lock().map(|guard|*guard.deref()), Some(100));
+        assert_eq!(
+            custom_mutex.try_lock().map(|guard| *guard.deref()),
+            Some(100)
+        );
         let mut guard = custom_mutex.try_lock().expect("Could not lock!");
         *guard.deref_mut() = 200;
         drop(guard);
-        custom_mutex.try_lock_func(|guard|{
+        custom_mutex.try_lock_func(|guard| {
             let value = guard.expect("Could not lock");
             assert_eq!(*value, 200);
             *value = 300;
@@ -448,7 +466,7 @@ mod test{
         let arc = Arc::new((custom_mutex, AtomicUsize::new(0)));
         let arc_clone = arc.clone();
         let guard = arc.0.lock();
-        let handle = spawn(move||{
+        let handle = spawn(move || {
             arc_clone.0.lock_func(|val| {
                 assert_eq!(*val, 300);
                 *val = 400;

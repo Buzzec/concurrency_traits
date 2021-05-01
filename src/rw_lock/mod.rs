@@ -221,7 +221,6 @@ pub trait AsyncTimeoutRwLock<'a>: AsyncRwLock<'a> {
     fn write_timeout_async(&'a self, timeout: Duration) -> Self::WriteTimeoutFuture;
 }
 
-
 /// A raw try rw lock that stores no data
 pub trait RawTryRwLock {
     /// Tries to add a reader to the lock. Returns true if successful.

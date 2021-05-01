@@ -1,9 +1,12 @@
-use crate::rw_lock::{AsyncRwLock, TryRwLockSized, AsyncTimeoutRwLock, CustomRwLock, RawAsyncTimeoutRwLock, CustomReadGuard, CustomWriteGuard, RawAsyncRwLock};
-use core::pin::Pin;
+use crate::rw_lock::{
+    AsyncRwLock, AsyncTimeoutRwLock, CustomReadGuard, CustomRwLock, CustomWriteGuard,
+    RawAsyncRwLock, RawAsyncTimeoutRwLock, TryRwLockSized,
+};
 use alloc::boxed::Box;
 use core::future::Future;
-use core::time::Duration;
 use core::ops::{Deref, DerefMut};
+use core::pin::Pin;
+use core::time::Duration;
 
 /// The functions for [`AsyncRwLock`] that only work for sized types.
 /// Separated to allow [`AsyncRwLock`] to be a trait object.
@@ -42,7 +45,7 @@ pub trait AsyncRwLockSized<'a>: Sized + AsyncRwLock<'a> + TryRwLockSized<'a> {
 /// The functions for [`AsyncTimeoutRwLock`] that only work for sized types.
 /// Separated to allow [`AsyncTimeoutRwLock`] to be a trait object.
 pub trait AsyncTimeoutRwLockSized<'a>:
-Sized + AsyncTimeoutRwLock<'a> + AsyncRwLockSized<'a>
+    Sized + AsyncTimeoutRwLock<'a> + AsyncRwLockSized<'a>
 {
     /// Reads form the lock with a timeout running func on the result
     /// asynchronously

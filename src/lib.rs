@@ -11,20 +11,20 @@ mod queue;
 mod rw_lock;
 mod stack;
 
-mod impls;
 #[cfg(feature = "alloc")]
 mod alloc_impls;
+mod impls;
 
 pub use mutex::*;
 pub use queue::*;
 pub use rw_lock::*;
 pub use stack::*;
 
-trait EnsureSend: Send{}
-trait EnsureSync: Sync{}
+trait EnsureSend: Send {}
+trait EnsureSync: Sync {}
 
 /// A spawner for new threads.
-pub trait ThreadSpawner{
+pub trait ThreadSpawner {
     /// The return value from [`ThreadSpawner::spawn`]
     type SpawnReturn;
     /// Spawns a new thread running `function`

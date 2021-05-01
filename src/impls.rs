@@ -3,10 +3,10 @@
 use crate::mutex::*;
 use crate::queue::*;
 use crate::rw_lock::*;
-use core::ops::{Deref, DerefMut};
-use core::future::Future;
-use core::time::Duration;
 use crate::stack::*;
+use core::future::Future;
+use core::ops::{Deref, DerefMut};
+use core::time::Duration;
 
 // TryMutex
 impl<'a, T: ?Sized> TryMutex<'a> for T

@@ -1,9 +1,9 @@
 use crate::mutex::*;
-use core::ops::Deref;
-use core::pin::Pin;
+use crate::rw_lock::*;
 use alloc::boxed::Box;
 use core::future::Future;
-use crate::rw_lock::*;
+use core::ops::Deref;
+use core::pin::Pin;
 use core::time::Duration;
 
 // AsyncMutexSized

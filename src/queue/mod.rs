@@ -124,5 +124,3 @@ pub trait TryDoubleEndedQueue: TryPrependQueue + TryReverseQueue {}
 pub trait DoubleEndedQueue: PrependQueue + ReverseQueue + TryDoubleEndedQueue {}
 /// An async queue that can be written and read from both ends
 pub trait AsyncDoubleEndedQueue: AsyncPrependQueue + AsyncReverseQueue {}
-
-
