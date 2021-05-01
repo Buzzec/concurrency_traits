@@ -6,14 +6,19 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-pub mod mutex;
-pub mod queue;
-pub mod rw_lock;
-pub mod stack;
+mod mutex;
+mod queue;
+mod rw_lock;
+mod stack;
 
 mod impls;
 #[cfg(feature = "alloc")]
 mod alloc_impls;
+
+pub use mutex::*;
+pub use queue::*;
+pub use rw_lock::*;
+pub use stack::*;
 
 trait EnsureSend: Send{}
 trait EnsureSync: Sync{}

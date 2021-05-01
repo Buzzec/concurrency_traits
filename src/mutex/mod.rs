@@ -378,16 +378,11 @@ mod test{
         let mut guard = custom_mutex.try_lock().expect("Could not lock!");
         *guard.deref_mut() = 200;
         drop(guard);
-        #[cfg(feature = "alloc")] {
-            custom_mutex.try_lock_func(|guard|{
-                let value = guard.expect("Could not lock");
-                assert_eq!(*value, 200);
-                *value = 300;
-            });
-        }
-        #[cfg(not(feature = "alloc"))]{
-            *custom_mutex.try_lock().expect("Could not lock") = 300;
-        }
+        custom_mutex.try_lock_func(|guard|{
+            let value = guard.expect("Could not lock");
+            assert_eq!(*value, 200);
+            *value = 300;
+        });
         let guard = custom_mutex.try_lock().expect("Could not lock!");
         assert!(custom_mutex.try_lock().is_none());
         assert_eq!(*guard, 300);
@@ -454,15 +449,10 @@ mod test{
         let arc_clone = arc.clone();
         let guard = arc.0.lock();
         let handle = spawn(move||{
-            #[cfg(feature = "alloc")] {
-                arc_clone.0.lock_func(|val| {
-                    assert_eq!(*val, 300);
-                    *val = 400;
-                });
-            }
-            #[cfg(not(feature = "alloc"))] {
-                *arc_clone.0.lock() = 400;
-            }
+            arc_clone.0.lock_func(|val| {
+                assert_eq!(*val, 300);
+                *val = 400;
+            });
             arc_clone.1.fetch_add(1, Ordering::SeqCst);
         });
         sleep(Duration::from_millis(50));
