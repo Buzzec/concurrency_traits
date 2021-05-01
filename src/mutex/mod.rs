@@ -350,8 +350,7 @@ mod test {
     use std::ops::{Deref, DerefMut};
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::{self, Arc, Condvar};
-    use std::thread::{sleep, spawn};
-    use std::time::Duration;
+    use std::thread::{spawn, yield_now};
 
     // True if unlocked
     struct AtomicTryMutex {
@@ -473,7 +472,7 @@ mod test {
             });
             arc_clone.1.fetch_add(1, Ordering::SeqCst);
         });
-        sleep(Duration::from_millis(50));
+        yield_now();
         assert_eq!(arc.1.load(Ordering::SeqCst), 0);
         drop(guard);
         handle.join().expect("Could not join");
