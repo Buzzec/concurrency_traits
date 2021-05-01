@@ -1,4 +1,4 @@
-//! Traits for concurrent primiatives.
+//! Traits for concurrent primitives.
 
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![warn(missing_docs, missing_debug_implementations, unused_import_braces)]
