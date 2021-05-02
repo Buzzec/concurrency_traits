@@ -24,6 +24,7 @@ jobs:
           - ""
           - --features alloc
           - --features std
+          - --features impl_parking_lot
 
     steps:
       - name: Checkout sources

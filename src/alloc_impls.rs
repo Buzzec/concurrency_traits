@@ -5,68 +5,134 @@ use core::future::Future;
 use core::ops::Deref;
 use core::pin::Pin;
 use core::time::Duration;
+use core::mem::ManuallyDrop;
+#[cfg(feature = "std")]
+use std::panic::AssertUnwindSafe;
+use alloc::rc::Rc;
+use alloc::sync::Arc;
+use alloc::borrow::Cow;
 
 // AsyncMutexSized
-impl<'a, T> AsyncMutexSized<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncMutexSized<'a>,
-{
-    fn lock_async_func<F>(
-        &'a self,
-        func: impl FnOnce(&mut Self::Item) -> F + 'a,
-    ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + 'a>>
-    where
-        F: Future,
-    {
-        self.deref().lock_async_func(func)
-    }
+macro_rules! impl_async_mutex_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncMutexSized<'__a> for $impl_type where T: AsyncMutexSized<'__a>,
+        {
+            impl_async_mutex_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncMutexSized<'__a> for $impl_type where T: AsyncMutexSized<'__a> + Clone
+        {
+            impl_async_mutex_sized_deref!();
+        }
+    };
+    () => {
+        fn lock_async_func<F>(
+            &'__a self,
+            func: impl FnOnce(&mut Self::Item) -> F + '__a,
+        ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + '__a>>
+        where
+            F: Future,
+        {
+            self.deref().lock_async_func(func)
+        }
+    };
 }
+impl_async_mutex_sized_deref!(&'a T, 'a);
+impl_async_mutex_sized_deref!(&'a mut T, 'a);
+// impl_async_mutex_sized_deref!(Pin<T>);
+impl_async_mutex_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_mutex_sized_deref!(AssertUnwindSafe<T>);
+impl_async_mutex_sized_deref!(Rc<T>);
+impl_async_mutex_sized_deref!(Arc<T>);
+impl_async_mutex_sized_deref!(Box<T>);
+impl_async_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
 
 // AsyncTimeoutMutexSized
-impl<'a, T> AsyncTimeoutMutexSized<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncTimeoutMutexSized<'a>,
-{
-    #[inline]
-    fn lock_timeout_async_func<F>(
-        &'a self,
-        timeout: Duration,
-        func: impl FnOnce(Option<&mut Self::Item>) -> F + 'a,
-    ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + 'a>>
-    where
-        F: Future,
-    {
-        self.deref().lock_timeout_async_func(timeout, func)
-    }
+macro_rules! impl_async_timeout_mutex_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncTimeoutMutexSized<'__a> for $impl_type where T: AsyncTimeoutMutexSized<'__a>,
+        {
+            impl_async_timeout_mutex_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncTimeoutMutexSized<'__a> for $impl_type where T: AsyncTimeoutMutexSized<'__a> + Clone
+        {
+            impl_async_timeout_mutex_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn lock_timeout_async_func<F>(
+            &'__a self,
+            timeout: Duration,
+            func: impl FnOnce(Option<&mut Self::Item>) -> F + '__a,
+        ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + '__a>>
+        where
+            F: Future + '__a,
+        {
+            self.deref().lock_timeout_async_func(timeout, func)
+        }
+    };
 }
+impl_async_timeout_mutex_sized_deref!(&'a T, 'a);
+impl_async_timeout_mutex_sized_deref!(&'a mut T, 'a);
+// impl_async_timeout_mutex_sized_deref!(Pin<T>);
+impl_async_timeout_mutex_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_timeout_mutex_sized_deref!(AssertUnwindSafe<T>);
+impl_async_timeout_mutex_sized_deref!(Rc<T>);
+impl_async_timeout_mutex_sized_deref!(Arc<T>);
+impl_async_timeout_mutex_sized_deref!(Box<T>);
+impl_async_timeout_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
 
 // AsyncRwLockSized
-impl<'a, T> AsyncRwLockSized<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncRwLockSized<'a>,
-{
-    #[inline]
-    fn read_async_func<F>(
-        &'a self,
-        func: impl FnOnce(&Self::Item) -> F + 'a,
-    ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + 'a>>
-    where
-        F: Future,
-    {
-        self.deref().read_async_func(func)
-    }
+macro_rules! impl_async_rw_lock_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncRwLockSized<'__a> for $impl_type where T: AsyncRwLockSized<'__a>,
+        {
+            impl_async_rw_lock_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncRwLockSized<'__a> for $impl_type where T: AsyncRwLockSized<'__a> + Clone
+        {
+            impl_async_rw_lock_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn read_async_func<F>(
+            &'__a self,
+            func: impl FnOnce(&Self::Item) -> F + '__a,
+        ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + '__a>>
+        where
+            F: Future,
+        {
+            self.deref().read_async_func(func)
+        }
 
-    #[inline]
-    fn write_async_func<F>(
-        &'a self,
-        func: impl FnOnce(&mut Self::Item) -> F + 'a,
-    ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + 'a>>
-    where
-        F: Future,
-    {
-        self.deref().write_async_func(func)
-    }
+        #[inline]
+        fn write_async_func<F>(
+            &'__a self,
+            func: impl FnOnce(&mut Self::Item) -> F + '__a,
+        ) -> Pin<Box<dyn Future<Output = <F as Future>::Output> + '__a>>
+        where
+            F: Future,
+        {
+            self.deref().write_async_func(func)
+        }
+    };
 }
+impl_async_rw_lock_sized_deref!(&'a T, 'a);
+impl_async_rw_lock_sized_deref!(&'a mut T, 'a);
+// impl_async_rw_lock_sized_deref!(Pin<T>);
+impl_async_rw_lock_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_rw_lock_sized_deref!(AssertUnwindSafe<T>);
+impl_async_rw_lock_sized_deref!(Rc<T>);
+impl_async_rw_lock_sized_deref!(Arc<T>);
+impl_async_rw_lock_sized_deref!(Box<T>);
+impl_async_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);

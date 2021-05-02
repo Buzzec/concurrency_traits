@@ -4,6 +4,12 @@
 #[cfg(feature = "alloc")]
 mod mutex_alloc;
 
+#[cfg(feature = "std")]
+mod mutex_std;
+
+#[cfg(feature = "impl_parking_lot")]
+mod mutex_parking_lot;
+
 #[cfg(feature = "alloc")]
 pub use mutex_alloc::*;
 

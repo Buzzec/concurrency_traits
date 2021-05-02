@@ -21,6 +21,7 @@ jobs:
           - ""
           - --features alloc
           - --features std
+          - --features impl_parking_lot
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -48,6 +49,7 @@ jobs:
           - ""
           - --features alloc
           - --features std
+          - --features impl_parking_lot
 
     steps:
       - name: Checkout sources

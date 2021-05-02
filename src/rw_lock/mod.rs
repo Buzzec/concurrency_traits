@@ -3,6 +3,9 @@
 #[cfg(feature = "alloc")]
 mod rw_lock_alloc;
 
+#[cfg(feature = "std")]
+mod rw_lock_std;
+
 #[cfg(feature = "alloc")]
 pub use rw_lock_alloc::*;
 

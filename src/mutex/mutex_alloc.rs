@@ -41,7 +41,7 @@ pub trait AsyncTimeoutMutexSized<'a>: Sized + AsyncTimeoutMutex<'a> {
         func: impl FnOnce(Option<&mut Self::Item>) -> F + 'a,
     ) -> Pin<Box<dyn Future<Output = F::Output> + 'a>>
     where
-        F: Future,
+        F: Future + 'a,
     {
         Box::pin(async move {
             match self.lock_timeout_async(timeout).await {

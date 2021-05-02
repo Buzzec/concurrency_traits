@@ -7,13 +7,61 @@ use crate::stack::*;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 use core::time::Duration;
+use core::pin::Pin;
+use core::mem::ManuallyDrop;
+#[cfg(feature = "std")]
+use std::panic::AssertUnwindSafe;
+#[cfg(feature = "alloc")]
+use alloc::rc::Rc;
+#[cfg(feature = "alloc")]
+use alloc::sync::Arc;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
 
 // TryMutex
-impl<'a, T: ?Sized> TryMutex<'a> for T
-where
-    T: Deref,
-    T::Target: TryMutex<'a>,
-{
+macro_rules! impl_try_mutex_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> TryMutex<'__a> for $impl_type where T: TryMutex<'__a>,
+        {
+            impl_try_mutex_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryMutex<'__a> for $impl_type where T: TryMutex<'__a>,
+        {
+            impl_try_mutex_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryMutex<'__a> for $impl_type where T: TryMutex<'__a> + Clone,
+        {
+            impl_try_mutex_deref!();
+        }
+    };
+    () => {
+        type Item = T::Item;
+        type Guard = T::Guard;
+
+        #[inline]
+        fn try_lock(&'__a self,) -> Option<Self::Guard> {
+            self.deref().try_lock()
+        }
+    };
+}
+impl_try_mutex_deref!(&'a T, 'a);
+impl_try_mutex_deref!(&'a mut T, 'a);
+impl_try_mutex_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_try_mutex_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TryMutex<'a> for Pin<T> where T: Deref, T::Target: TryMutex<'a>{
     type Item = <T::Target as TryMutex<'a>>::Item;
     type Guard = <T::Target as TryMutex<'a>>::Guard;
 
@@ -26,11 +74,41 @@ where
 impl<'a, I: ?Sized, G> dyn TryMutex<'a, Item = I, Guard = G> where G: DerefMut<Target = I> {}
 
 // TryMutexSized
-impl<'a, T> TryMutexSized<'a> for T
-where
-    T: Deref,
-    T::Target: TryMutexSized<'a>,
-{
+macro_rules! impl_try_mutex_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryMutexSized<'__a> for $impl_type where T: TryMutexSized<'__a>,
+        {
+            impl_try_mutex_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryMutexSized<'__a> for $impl_type where T: TryMutexSized<'__a> + Clone
+        {
+            impl_try_mutex_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+            fn try_lock_func<O>(&'__a self, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
+                self.deref().try_lock_func(func)
+            }
+    };
+}
+impl_try_mutex_sized_deref!(&'a T, 'a);
+impl_try_mutex_sized_deref!(&'a mut T, 'a);
+// impl_try_mutex_sized_deref!(Pin<T>);
+impl_try_mutex_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_try_mutex_sized_deref!(AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_sized_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_sized_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_sized_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_try_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TryMutexSized<'a> for Pin<T> where T: Deref, T::Target: TryMutexSized<'a>{
     #[inline]
     fn try_lock_func<O>(&'a self, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
         self.deref().try_lock_func(func)
@@ -38,11 +116,47 @@ where
 }
 
 // Mutex
-impl<'a, T: ?Sized> Mutex<'a> for T
-where
-    T: Deref,
-    T::Target: Mutex<'a>,
-{
+macro_rules! impl_mutex_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> Mutex<'__a> for $impl_type where T: Mutex<'__a>,
+        {
+            impl_mutex_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> Mutex<'__a> for $impl_type where T: Mutex<'__a>,
+        {
+            impl_mutex_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> Mutex<'__a> for $impl_type where T: Mutex<'__a> + Clone,
+        {
+            impl_mutex_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn lock(&'__a self) -> Self::Guard {
+            self.deref().lock()
+        }
+    };
+}
+impl_mutex_deref!(&'a T, 'a);
+impl_mutex_deref!(&'a mut T, 'a);
+// impl_mutex_deref!(Sized Pin<T>);
+impl_mutex_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_mutex_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> Mutex<'a> for Pin<T> where T: Deref, T::Target: Mutex<'a>{
     #[inline]
     fn lock(&'a self) -> Self::Guard {
         self.deref().lock()
@@ -52,11 +166,41 @@ where
 impl<'a, I: ?Sized, G> dyn Mutex<'a, Item = I, Guard = G> where G: DerefMut<Target = I> {}
 
 // MutexSized
-impl<'a, T> MutexSized<'a> for T
-where
-    T: Deref,
-    T::Target: MutexSized<'a>,
-{
+macro_rules! impl_mutex_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> MutexSized<'__a> for $impl_type where T: MutexSized<'__a>,
+        {
+            impl_mutex_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> MutexSized<'__a> for $impl_type where T: MutexSized<'__a> + Clone
+        {
+            impl_mutex_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn lock_func<O>(&'__a self, func: impl FnOnce(&mut Self::Item) -> O) -> O {
+            self.deref().lock_func(func)
+        }
+    };
+}
+impl_mutex_sized_deref!(&'a T, 'a);
+impl_mutex_sized_deref!(&'a mut T, 'a);
+// impl_mutex_sized_deref!(Pin<T>);
+impl_mutex_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_mutex_sized_deref!(AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_sized_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_sized_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_sized_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> MutexSized<'a> for Pin<T> where T: Deref, T::Target: MutexSized<'a>{
     #[inline]
     fn lock_func<O>(&'a self, func: impl FnOnce(&mut Self::Item) -> O) -> O {
         self.deref().lock_func(func)
@@ -64,11 +208,50 @@ where
 }
 
 // AsyncMutex
-impl<'a, T: ?Sized> AsyncMutex<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncMutex<'a>,
-{
+macro_rules! impl_async_mutex_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> AsyncMutex<'__a> for $impl_type where T: AsyncMutex<'__a>,
+        {
+            impl_async_mutex_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncMutex<'__a> for $impl_type where T: AsyncMutex<'__a>,
+        {
+            impl_async_mutex_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncMutex<'__a> for $impl_type where T: AsyncMutex<'__a> + Clone,
+        {
+            impl_async_mutex_deref!();
+        }
+    };
+    () => {
+        type AsyncGuard = T::AsyncGuard;
+        type LockFuture = T::LockFuture;
+
+        #[inline]
+        fn lock_async(&'__a self) -> Self::LockFuture {
+            self.deref().lock_async()
+        }
+    };
+}
+impl_async_mutex_deref!(&'a T, 'a);
+impl_async_mutex_deref!(&'a mut T, 'a);
+// impl_async_mutex_deref!(Sized Pin<T>);
+impl_async_mutex_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_mutex_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_async_mutex_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_async_mutex_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_async_mutex_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_async_mutex_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> AsyncMutex<'a> for Pin<T> where T: Deref, T::Target: AsyncMutex<'a>{
     type AsyncGuard = <T::Target as AsyncMutex<'a>>::AsyncGuard;
     type LockFuture = <T::Target as AsyncMutex<'a>>::LockFuture;
 
@@ -77,7 +260,7 @@ where
         self.deref().lock_async()
     }
 }
-/// Ensure can be trait object
+// Ensure can be trait object
 impl<'a, I: ?Sized, G, AG, LF>
     dyn AsyncMutex<'a, Item = I, Guard = G, AsyncGuard = AG, LockFuture = LF>
 where
@@ -88,41 +271,140 @@ where
 }
 
 // TimeoutMutex
-impl<'a, T: ?Sized> TimeoutMutex<'a> for T
-where
-    T: Deref,
-    T::Target: TimeoutMutex<'a>,
-{
+macro_rules! impl_timeout_mutex_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> TimeoutMutex<'__a> for $impl_type where T: TimeoutMutex<'__a>,{
+            impl_timeout_mutex_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutMutex<'__a> for $impl_type where T: TimeoutMutex<'__a>,{
+            impl_timeout_mutex_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutMutex<'__a> for $impl_type where T: TimeoutMutex<'__a> + Clone,{
+            impl_timeout_mutex_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn lock_timeout(&'__a self, timeout: Duration) -> Option<Self::Guard> {
+            self.deref().lock_timeout(timeout)
+        }
+    };
+}
+impl_timeout_mutex_deref!(&'a T, 'a);
+impl_timeout_mutex_deref!(&'a mut T, 'a);
+// impl_timeout_mutex_deref!(Sized Pin<T>);
+impl_timeout_mutex_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_timeout_mutex_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TimeoutMutex<'a> for Pin<T> where T: Deref, T::Target: TimeoutMutex<'a>{
     #[inline]
     fn lock_timeout(&'a self, timeout: Duration) -> Option<Self::Guard> {
         self.deref().lock_timeout(timeout)
     }
 }
-/// Ensure can be trait object
+// Ensure can be trait object
 impl<'a, I: ?Sized, G> dyn TimeoutMutex<'a, Item = I, Guard = G> where G: DerefMut<Target = I> {}
 
 // TimeoutMutexSized
-impl<'a, T> TimeoutMutexSized<'a> for T
-where
-    T: Deref,
-    T::Target: TimeoutMutexSized<'a>,
-{
+macro_rules! impl_timeout_mutex_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutMutexSized<'__a> for $impl_type where T: TimeoutMutexSized<'__a>,
+        {
+            impl_timeout_mutex_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutMutexSized<'__a> for $impl_type where T: TimeoutMutexSized<'__a> + Clone
+        {
+            impl_timeout_mutex_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn lock_timeout_func<O>(
+            &'__a self,
+            timeout: Duration,
+            func: impl FnOnce(Option<&mut Self::Item>) -> O,
+        ) -> O {
+            self.deref().lock_timeout_func(timeout, func)
+        }
+    };
+}
+impl_timeout_mutex_sized_deref!(&'a T, 'a);
+impl_timeout_mutex_sized_deref!(&'a mut T, 'a);
+impl_timeout_mutex_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_timeout_mutex_sized_deref!(AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_sized_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_sized_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_sized_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TimeoutMutexSized<'a> for Pin<T> where T: Deref, T::Target: TimeoutMutexSized<'a>{
     #[inline]
-    fn lock_timeout_func<O>(
-        &'a self,
-        timeout: Duration,
-        func: impl FnOnce(Option<&mut Self::Item>) -> O,
-    ) -> O {
+    fn lock_timeout_func<O>(&'a self, timeout: Duration, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
         self.deref().lock_timeout_func(timeout, func)
     }
 }
 
 // AsyncTimeoutMutex
-impl<'a, T: ?Sized> AsyncTimeoutMutex<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncTimeoutMutex<'a>,
-{
+macro_rules! impl_async_timeout_mutex_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> AsyncTimeoutMutex<'__a> for $impl_type where T: AsyncTimeoutMutex<'__a>,
+        {
+            impl_async_timeout_mutex_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncTimeoutMutex<'__a> for $impl_type where T: AsyncTimeoutMutex<'__a>,
+        {
+            impl_async_timeout_mutex_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncTimeoutMutex<'__a> for $impl_type where T: AsyncTimeoutMutex<'__a> + Clone,
+        {
+            impl_async_timeout_mutex_deref!();
+        }
+    };
+    () => {
+        type LockTimeoutFuture = T::LockTimeoutFuture;
+
+        #[inline]
+        fn lock_timeout_async(&'__a self, timeout: Duration) -> Self::LockTimeoutFuture {
+            self.deref().lock_timeout_async(timeout)
+        }
+    }
+}
+impl_async_timeout_mutex_deref!(&'a T, 'a);
+impl_async_timeout_mutex_deref!(&'a mut T, 'a);
+impl_async_timeout_mutex_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_timeout_mutex_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_mutex_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_mutex_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_mutex_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_mutex_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> AsyncTimeoutMutex<'a> for Pin<T> where T: Deref, T::Target: AsyncTimeoutMutex<'a>{
     type LockTimeoutFuture = <T::Target as AsyncTimeoutMutex<'a>>::LockTimeoutFuture;
 
     #[inline]
@@ -144,11 +426,55 @@ impl<'a, I: ?Sized, G, AG, LF, LTF>
 }
 
 // TryRwLock
-impl<'a, T: ?Sized> TryRwLock<'a> for T
-where
-    T: Deref,
-    T::Target: TryRwLock<'a>,
-{
+macro_rules! impl_try_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> TryRwLock<'__a> for $impl_type where T: TryRwLock<'__a>,
+        {
+            impl_try_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryRwLock<'__a> for $impl_type where T: TryRwLock<'__a>,
+        {
+            impl_try_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryRwLock<'__a> for $impl_type where T: TryRwLock<'__a> + Clone,
+        {
+            impl_try_rw_lock_deref!();
+        }
+    };
+    () =>{
+        type Item = T::Item;
+        type ReadGuard = T::ReadGuard;
+        type WriteGuard = T::WriteGuard;
+
+        #[inline]
+        fn try_read(&'__a self) -> Option<Self::ReadGuard> {
+            self.deref().try_read()
+        }
+
+        #[inline]
+        fn try_write(&'__a self) -> Option<Self::WriteGuard> {
+            self.deref().try_write()
+        }
+    }
+}
+impl_try_rw_lock_deref!(&'a T, 'a);
+impl_try_rw_lock_deref!(&'a mut T, 'a);
+impl_try_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_try_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TryRwLock<'a> for Pin<T> where T: Deref, T::Target: TryRwLock<'a>{
     type Item = <T::Target as TryRwLock<'a>>::Item;
     type ReadGuard = <T::Target as TryRwLock<'a>>::ReadGuard;
     type WriteGuard = <T::Target as TryRwLock<'a>>::WriteGuard;
@@ -167,28 +493,101 @@ where
 impl<'a, I: ?Sized, RG, WG> dyn TryRwLock<'a, Item = I, ReadGuard = RG, WriteGuard = WG> {}
 
 // TryRwLockSized
-impl<'a, T> TryRwLockSized<'a> for T
-where
-    T: Deref,
-    T::Target: TryRwLockSized<'a>,
-{
+macro_rules! impl_try_rw_lock_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryRwLockSized<'__a> for $impl_type where T: TryRwLockSized<'__a>,
+        {
+            impl_try_rw_lock_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryRwLockSized<'__a> for $impl_type where T: TryRwLockSized<'__a> + Clone
+        {
+            impl_try_rw_lock_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn try_read_func<O>(&'__a self, func: impl FnOnce(Option<&Self::Item>) -> O) -> O {
+            self.deref().try_read_func(func)
+        }
+
+        #[inline]
+        fn try_write_func<O>(&'__a self, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
+            self.deref().try_write_func(func)
+        }
+    };
+}
+impl_try_rw_lock_sized_deref!(&'a T, 'a);
+impl_try_rw_lock_sized_deref!(&'a mut T, 'a);
+impl_try_rw_lock_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_try_rw_lock_sized_deref!(AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_sized_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_sized_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_sized_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_try_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TryRwLockSized<'a> for Pin<T> where T: Deref, T::Target: TryRwLockSized<'a>{
     #[inline]
     fn try_read_func<O>(&'a self, func: impl FnOnce(Option<&Self::Item>) -> O) -> O {
         self.deref().try_read_func(func)
     }
 
-    #[inline]
     fn try_write_func<O>(&'a self, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
         self.deref().try_write_func(func)
     }
 }
 
 // RwLock
-impl<'a, T: ?Sized> RwLock<'a> for T
-where
-    T: Deref,
-    T::Target: RwLock<'a>,
-{
+macro_rules! impl_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> RwLock<'__a> for $impl_type where T: RwLock<'__a>,
+        {
+            impl_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> RwLock<'__a> for $impl_type where T: RwLock<'__a>,
+        {
+            impl_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> RwLock<'__a> for $impl_type where T: RwLock<'__a> + Clone,
+        {
+            impl_rw_lock_deref!();
+        }
+    };
+    () =>{
+        #[inline]
+        fn read(&'__a self) -> Self::ReadGuard {
+            self.deref().read()
+        }
+
+        #[inline]
+        fn write(&'__a self) -> Self::WriteGuard {
+            self.deref().write()
+        }
+    }
+}
+impl_rw_lock_deref!(&'a T, 'a);
+impl_rw_lock_deref!(&'a mut T, 'a);
+impl_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> RwLock<'a> for Pin<T> where T: Deref, T::Target: RwLock<'a>{
     #[inline]
     fn read(&'a self) -> Self::ReadGuard {
         self.deref().read()
@@ -203,11 +602,45 @@ where
 impl<'a, I: ?Sized, RG, WG> dyn RwLock<'a, Item = I, ReadGuard = RG, WriteGuard = WG> {}
 
 // RwLockSized
-impl<'a, T> RwLockSized<'a> for T
-where
-    T: Deref,
-    T::Target: RwLockSized<'a>,
-{
+macro_rules! impl_rw_lock_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> RwLockSized<'__a> for $impl_type where T: RwLockSized<'__a>,
+        {
+            impl_rw_lock_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> RwLockSized<'__a> for $impl_type where T: RwLockSized<'__a> + Clone
+        {
+            impl_rw_lock_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn read_func<O>(&'__a self, func: impl FnOnce(&Self::Item) -> O) -> O {
+            self.deref().read_func(func)
+        }
+
+        #[inline]
+        fn write_func<O>(&'__a self, func: impl FnOnce(&mut Self::Item) -> O) -> O {
+            self.deref().write_func(func)
+        }
+    };
+}
+impl_rw_lock_sized_deref!(&'a T, 'a);
+impl_rw_lock_sized_deref!(&'a mut T, 'a);
+impl_rw_lock_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_rw_lock_sized_deref!(AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_sized_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_sized_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_sized_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> RwLockSized<'a> for Pin<T> where T: Deref, T::Target: RwLockSized<'a>{
     #[inline]
     fn read_func<O>(&'a self, func: impl FnOnce(&Self::Item) -> O) -> O {
         self.deref().read_func(func)
@@ -220,11 +653,56 @@ where
 }
 
 // AsyncRwLock
-impl<'a, T: ?Sized> AsyncRwLock<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncRwLock<'a>,
-{
+macro_rules! impl_async_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> AsyncRwLock<'__a> for $impl_type where T: AsyncRwLock<'__a>,
+        {
+            impl_async_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncRwLock<'__a> for $impl_type where T: AsyncRwLock<'__a>,
+        {
+            impl_async_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncRwLock<'__a> for $impl_type where T: AsyncRwLock<'__a> + Clone,
+        {
+            impl_async_rw_lock_deref!();
+        }
+    };
+    () =>{
+        type AsyncReadGuard = T::AsyncReadGuard;
+        type AsyncWriteGuard = T::AsyncWriteGuard;
+        type ReadFuture = T::ReadFuture;
+        type WriteFuture = T::WriteFuture;
+
+        #[inline]
+        fn read_async(&'__a self) -> Self::ReadFuture {
+            self.deref().read_async()
+        }
+
+        #[inline]
+        fn write_async(&'__a self) -> Self::WriteFuture {
+            self.deref().write_async()
+        }
+    }
+}
+impl_async_rw_lock_deref!(&'a T, 'a);
+impl_async_rw_lock_deref!(&'a mut T, 'a);
+impl_async_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_async_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_async_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_async_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_async_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> AsyncRwLock<'a> for Pin<T> where T: Deref, T::Target: AsyncRwLock<'a>{
     type AsyncReadGuard = <T::Target as AsyncRwLock<'a>>::AsyncReadGuard;
     type AsyncWriteGuard = <T::Target as AsyncRwLock<'a>>::AsyncWriteGuard;
     type ReadFuture = <T::Target as AsyncRwLock<'a>>::ReadFuture;
@@ -256,37 +734,163 @@ impl<'a, I: ?Sized, RG, WG, ARG, AWG, RF, WF>
 }
 
 // UpgradeRwLock
-impl<'a, T: ?Sized> UpgradeRwLock<'a> for T
-where
-    T: Deref,
-    T::Target: UpgradeRwLock<'a>,
-    <T::Target as TryRwLock<'a>>::ReadGuard: UpgradeReadGuard<
-        'a,
-        Item = <T::Target as TryRwLock<'a>>::Item,
-        WriteGuard = <T::Target as TryRwLock<'a>>::WriteGuard,
-    >,
-{
+macro_rules! impl_upgrade_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> UpgradeRwLock<'__a> for $impl_type where
+            T: UpgradeRwLock<'__a>,
+            <T as TryRwLock<'__a>>::ReadGuard: UpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> UpgradeRwLock<'__a> for $impl_type where
+            T: UpgradeRwLock<'__a>,
+            <T as TryRwLock<'__a>>::ReadGuard: UpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> UpgradeRwLock<'__a> for $impl_type
+        where
+            T: UpgradeRwLock<'__a> + Clone,
+            <T as TryRwLock<'__a>>::ReadGuard: UpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    () =>{}
 }
+impl_upgrade_rw_lock_deref!(&'a T, 'a);
+impl_upgrade_rw_lock_deref!(&'a mut T, 'a);
+impl_upgrade_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_upgrade_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> UpgradeRwLock<'a> for Pin<T> where T: Deref, T::Target: UpgradeRwLock<'a>, <T::Target as TryRwLock<'a>>::ReadGuard: UpgradeReadGuard<'a, Item=<T::Target as TryRwLock<'a>>::Item, WriteGuard=<T::Target as TryRwLock<'a>>::WriteGuard>{}
 
 // AsyncUpgradeRwLock
-impl<'a, T: ?Sized> AsyncUpgradeRwLock<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncUpgradeRwLock<'a>,
-    <T::Target as AsyncRwLock<'a>>::AsyncReadGuard: AsyncUpgradeReadGuard<
-        'a,
-        Item = <T::Target as TryRwLock<'a>>::Item,
-        AsyncWriteGuard = <T::Target as AsyncRwLock<'a>>::AsyncWriteGuard,
-    >,
-{
+macro_rules! impl_async_upgrade_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> AsyncUpgradeRwLock<'__a> for $impl_type where
+            T: AsyncUpgradeRwLock<'__a>,
+            <T as AsyncRwLock<'__a>>::AsyncReadGuard: AsyncUpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                AsyncWriteGuard = T::AsyncWriteGuard,
+            >,
+        {
+            impl_async_upgrade_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncUpgradeRwLock<'__a> for $impl_type where
+            T: AsyncUpgradeRwLock<'__a>,
+            <T as AsyncRwLock<'__a>>::AsyncReadGuard: AsyncUpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                AsyncWriteGuard = T::AsyncWriteGuard,
+            >,
+        {
+            impl_async_upgrade_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncUpgradeRwLock<'__a> for $impl_type
+        where
+            T: AsyncUpgradeRwLock<'__a> + Clone,
+            <T as AsyncRwLock<'__a>>::AsyncReadGuard: AsyncUpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                AsyncWriteGuard = T::AsyncWriteGuard,
+            >,
+        {
+            impl_async_upgrade_rw_lock_deref!();
+        }
+    };
+    () =>{}
 }
+impl_async_upgrade_rw_lock_deref!(&'a T, 'a);
+impl_async_upgrade_rw_lock_deref!(&'a mut T, 'a);
+impl_async_upgrade_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_upgrade_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_async_upgrade_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_async_upgrade_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_async_upgrade_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_async_upgrade_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> AsyncUpgradeRwLock<'a> for Pin<T> where T: Deref, T::Target: AsyncUpgradeRwLock<'a>, <T::Target as AsyncRwLock<'a>>::AsyncReadGuard: AsyncUpgradeReadGuard<'a, Item=<T::Target as TryRwLock<'a>>::Item, AsyncWriteGuard=<T::Target as AsyncRwLock<'a>>::AsyncWriteGuard>{}
 
 // TimeoutRwLock
-impl<'a, T: ?Sized> TimeoutRwLock<'a> for T
-where
-    T: Deref,
-    T::Target: TimeoutRwLock<'a>,
-{
+macro_rules! impl_timeout_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> TimeoutRwLock<'__a> for $impl_type where T: TimeoutRwLock<'__a>,
+        {
+            impl_timeout_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutRwLock<'__a> for $impl_type where T: TimeoutRwLock<'__a>,
+        {
+            impl_timeout_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutRwLock<'__a> for $impl_type where T: TimeoutRwLock<'__a> + Clone,
+        {
+            impl_timeout_rw_lock_deref!();
+        }
+    };
+    () =>{
+        #[inline]
+        fn read_timeout(&'__a self, timeout: Duration) -> Option<Self::ReadGuard> {
+            self.deref().read_timeout(timeout)
+        }
+
+        #[inline]
+        fn write_timeout(&'__a self, timeout: Duration) -> Option<Self::WriteGuard> {
+            self.deref().write_timeout(timeout)
+        }
+    }
+}
+impl_timeout_rw_lock_deref!(&'a T, 'a);
+impl_timeout_rw_lock_deref!(&'a mut T, 'a);
+impl_timeout_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_timeout_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TimeoutRwLock<'a> for Pin<T> where T: Deref, T::Target: TimeoutRwLock<'a>{
     #[inline]
     fn read_timeout(&'a self, timeout: Duration) -> Option<Self::ReadGuard> {
         self.deref().read_timeout(timeout)
@@ -301,36 +905,113 @@ where
 impl<'a, I: ?Sized, RG, WG> dyn TimeoutRwLock<'a, Item = I, ReadGuard = RG, WriteGuard = WG> {}
 
 // TimeoutRwLockSized
-impl<'a, T> TimeoutRwLockSized<'a> for T
-where
-    T: Deref,
-    T::Target: TimeoutRwLockSized<'a>,
-{
+macro_rules! impl_timeout_rw_lock_sized_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutRwLockSized<'__a> for $impl_type where T: TimeoutRwLockSized<'__a>,
+        {
+            impl_timeout_rw_lock_sized_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TimeoutRwLockSized<'__a> for $impl_type where T: TimeoutRwLockSized<'__a> + Clone
+        {
+            impl_timeout_rw_lock_sized_deref!();
+        }
+    };
+    () => {
+        #[inline]
+        fn read_timeout_func<O>(
+            &'__a self,
+            timeout: Duration,
+            func: impl FnOnce(Option<&Self::Item>) -> O,
+        ) -> O {
+            self.deref().read_timeout_func(timeout, func)
+        }
+
+        #[inline]
+        fn write_timeout_func<O>(
+            &'__a self,
+            timeout: Duration,
+            func: impl FnOnce(Option<&mut Self::Item>) -> O,
+        ) -> O {
+            self.deref().write_timeout_func(timeout, func)
+        }
+    };
+}
+impl_timeout_rw_lock_sized_deref!(&'a T, 'a);
+impl_timeout_rw_lock_sized_deref!(&'a mut T, 'a);
+impl_timeout_rw_lock_sized_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_timeout_rw_lock_sized_deref!(AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_sized_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_sized_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_sized_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_timeout_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TimeoutRwLockSized<'a> for Pin<T> where T: Deref, T::Target: TimeoutRwLockSized<'a>{
     #[inline]
-    fn read_timeout_func<O>(
-        &'a self,
-        timeout: Duration,
-        func: impl FnOnce(Option<&Self::Item>) -> O,
-    ) -> O {
+    fn read_timeout_func<O>(&'a self, timeout: Duration, func: impl FnOnce(Option<&Self::Item>) -> O) -> O {
         self.deref().read_timeout_func(timeout, func)
     }
 
     #[inline]
-    fn write_timeout_func<O>(
-        &'a self,
-        timeout: Duration,
-        func: impl FnOnce(Option<&mut Self::Item>) -> O,
-    ) -> O {
+    fn write_timeout_func<O>(&'a self, timeout: Duration, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
         self.deref().write_timeout_func(timeout, func)
     }
 }
 
 // AsyncTimeoutRwLock
-impl<'a, T: ?Sized> AsyncTimeoutRwLock<'a> for T
-where
-    T: Deref,
-    T::Target: AsyncTimeoutRwLock<'a>,
-{
+macro_rules! impl_async_timeout_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> AsyncTimeoutRwLock<'__a> for $impl_type where T: AsyncTimeoutRwLock<'__a>,
+        {
+            impl_async_timeout_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncTimeoutRwLock<'__a> for $impl_type where T: AsyncTimeoutRwLock<'__a>,
+        {
+            impl_async_timeout_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> AsyncTimeoutRwLock<'__a> for $impl_type where T: AsyncTimeoutRwLock<'__a> + Clone,
+        {
+            impl_async_timeout_rw_lock_deref!();
+        }
+    };
+    () =>{
+        type ReadTimeoutFuture = T::ReadTimeoutFuture;
+        type WriteTimeoutFuture = T::WriteTimeoutFuture;
+
+        #[inline]
+        fn read_timeout_async(&'__a self, timeout: Duration) -> Self::ReadTimeoutFuture {
+            self.deref().read_timeout_async(timeout)
+        }
+
+        #[inline]
+        fn write_timeout_async(&'__a self, timeout: Duration) -> Self::WriteTimeoutFuture {
+            self.deref().write_timeout_async(timeout)
+        }
+    }
+}
+impl_async_timeout_rw_lock_deref!(&'a T, 'a);
+impl_async_timeout_rw_lock_deref!(&'a mut T, 'a);
+impl_async_timeout_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_async_timeout_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_async_timeout_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> AsyncTimeoutRwLock<'a> for Pin<T> where T: Deref, T::Target: AsyncTimeoutRwLock<'a>{
     type ReadTimeoutFuture = <T::Target as AsyncTimeoutRwLock<'a>>::ReadTimeoutFuture;
     type WriteTimeoutFuture = <T::Target as AsyncTimeoutRwLock<'a>>::WriteTimeoutFuture;
 
