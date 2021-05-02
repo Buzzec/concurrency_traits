@@ -12,11 +12,14 @@ use core::mem::ManuallyDrop;
 #[cfg(feature = "std")]
 use std::panic::AssertUnwindSafe;
 #[cfg(feature = "alloc")]
+use alloc::boxed::Box;
+#[cfg(feature = "alloc")]
 use alloc::rc::Rc;
 #[cfg(feature = "alloc")]
 use alloc::sync::Arc;
 #[cfg(feature = "alloc")]
 use alloc::borrow::Cow;
+
 
 // TryMutex
 macro_rules! impl_try_mutex_deref {
