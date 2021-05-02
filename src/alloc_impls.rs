@@ -1,16 +1,16 @@
 use crate::mutex::*;
 use crate::rw_lock::*;
+use alloc::borrow::Cow;
 use alloc::boxed::Box;
+use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::future::Future;
+use core::mem::ManuallyDrop;
 use core::ops::Deref;
 use core::pin::Pin;
 use core::time::Duration;
-use core::mem::ManuallyDrop;
 #[cfg(feature = "std")]
 use std::panic::AssertUnwindSafe;
-use alloc::rc::Rc;
-use alloc::sync::Arc;
-use alloc::borrow::Cow;
 
 // AsyncMutexSized
 macro_rules! impl_async_mutex_sized_deref {

@@ -4,22 +4,21 @@ use crate::mutex::*;
 use crate::queue::*;
 use crate::rw_lock::*;
 use crate::stack::*;
-use core::future::Future;
-use core::ops::{Deref, DerefMut};
-use core::time::Duration;
-use core::pin::Pin;
-use core::mem::ManuallyDrop;
-#[cfg(feature = "std")]
-use std::panic::AssertUnwindSafe;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 #[cfg(feature = "alloc")]
 use alloc::rc::Rc;
 #[cfg(feature = "alloc")]
 use alloc::sync::Arc;
-#[cfg(feature = "alloc")]
-use alloc::borrow::Cow;
-
+use core::future::Future;
+use core::mem::ManuallyDrop;
+use core::ops::{Deref, DerefMut};
+use core::pin::Pin;
+use core::time::Duration;
+#[cfg(feature = "std")]
+use std::panic::AssertUnwindSafe;
 
 // TryMutex
 macro_rules! impl_try_mutex_deref {
@@ -64,7 +63,11 @@ impl_try_mutex_deref!(Arc<T>);
 impl_try_mutex_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_try_mutex_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TryMutex<'a> for Pin<T> where T: Deref, T::Target: TryMutex<'a>{
+impl<'a, T> TryMutex<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TryMutex<'a>,
+{
     type Item = <T::Target as TryMutex<'a>>::Item;
     type Guard = <T::Target as TryMutex<'a>>::Guard;
 
@@ -111,7 +114,11 @@ impl_try_mutex_sized_deref!(Arc<T>);
 impl_try_mutex_sized_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_try_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TryMutexSized<'a> for Pin<T> where T: Deref, T::Target: TryMutexSized<'a>{
+impl<'a, T> TryMutexSized<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TryMutexSized<'a>,
+{
     #[inline]
     fn try_lock_func<O>(&'a self, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
         self.deref().try_lock_func(func)
@@ -159,7 +166,11 @@ impl_mutex_deref!(Arc<T>);
 impl_mutex_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_mutex_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> Mutex<'a> for Pin<T> where T: Deref, T::Target: Mutex<'a>{
+impl<'a, T> Mutex<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: Mutex<'a>,
+{
     #[inline]
     fn lock(&'a self) -> Self::Guard {
         self.deref().lock()
@@ -203,7 +214,11 @@ impl_mutex_sized_deref!(Arc<T>);
 impl_mutex_sized_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> MutexSized<'a> for Pin<T> where T: Deref, T::Target: MutexSized<'a>{
+impl<'a, T> MutexSized<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: MutexSized<'a>,
+{
     #[inline]
     fn lock_func<O>(&'a self, func: impl FnOnce(&mut Self::Item) -> O) -> O {
         self.deref().lock_func(func)
@@ -254,7 +269,11 @@ impl_async_mutex_deref!(Arc<T>);
 impl_async_mutex_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_async_mutex_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> AsyncMutex<'a> for Pin<T> where T: Deref, T::Target: AsyncMutex<'a>{
+impl<'a, T> AsyncMutex<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: AsyncMutex<'a>,
+{
     type AsyncGuard = <T::Target as AsyncMutex<'a>>::AsyncGuard;
     type LockFuture = <T::Target as AsyncMutex<'a>>::LockFuture;
 
@@ -311,7 +330,11 @@ impl_timeout_mutex_deref!(Arc<T>);
 impl_timeout_mutex_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_timeout_mutex_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TimeoutMutex<'a> for Pin<T> where T: Deref, T::Target: TimeoutMutex<'a>{
+impl<'a, T> TimeoutMutex<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TimeoutMutex<'a>,
+{
     #[inline]
     fn lock_timeout(&'a self, timeout: Duration) -> Option<Self::Guard> {
         self.deref().lock_timeout(timeout)
@@ -358,9 +381,17 @@ impl_timeout_mutex_sized_deref!(Arc<T>);
 impl_timeout_mutex_sized_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_timeout_mutex_sized_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TimeoutMutexSized<'a> for Pin<T> where T: Deref, T::Target: TimeoutMutexSized<'a>{
+impl<'a, T> TimeoutMutexSized<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TimeoutMutexSized<'a>,
+{
     #[inline]
-    fn lock_timeout_func<O>(&'a self, timeout: Duration, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
+    fn lock_timeout_func<O>(
+        &'a self,
+        timeout: Duration,
+        func: impl FnOnce(Option<&mut Self::Item>) -> O,
+    ) -> O {
         self.deref().lock_timeout_func(timeout, func)
     }
 }
@@ -407,7 +438,11 @@ impl_async_timeout_mutex_deref!(Arc<T>);
 impl_async_timeout_mutex_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_async_timeout_mutex_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> AsyncTimeoutMutex<'a> for Pin<T> where T: Deref, T::Target: AsyncTimeoutMutex<'a>{
+impl<'a, T> AsyncTimeoutMutex<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: AsyncTimeoutMutex<'a>,
+{
     type LockTimeoutFuture = <T::Target as AsyncTimeoutMutex<'a>>::LockTimeoutFuture;
 
     #[inline]
@@ -477,7 +512,11 @@ impl_try_rw_lock_deref!(Arc<T>);
 impl_try_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_try_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TryRwLock<'a> for Pin<T> where T: Deref, T::Target: TryRwLock<'a>{
+impl<'a, T> TryRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TryRwLock<'a>,
+{
     type Item = <T::Target as TryRwLock<'a>>::Item;
     type ReadGuard = <T::Target as TryRwLock<'a>>::ReadGuard;
     type WriteGuard = <T::Target as TryRwLock<'a>>::WriteGuard;
@@ -534,7 +573,11 @@ impl_try_rw_lock_sized_deref!(Arc<T>);
 impl_try_rw_lock_sized_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_try_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TryRwLockSized<'a> for Pin<T> where T: Deref, T::Target: TryRwLockSized<'a>{
+impl<'a, T> TryRwLockSized<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TryRwLockSized<'a>,
+{
     #[inline]
     fn try_read_func<O>(&'a self, func: impl FnOnce(Option<&Self::Item>) -> O) -> O {
         self.deref().try_read_func(func)
@@ -590,7 +633,11 @@ impl_rw_lock_deref!(Arc<T>);
 impl_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> RwLock<'a> for Pin<T> where T: Deref, T::Target: RwLock<'a>{
+impl<'a, T> RwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: RwLock<'a>,
+{
     #[inline]
     fn read(&'a self) -> Self::ReadGuard {
         self.deref().read()
@@ -643,7 +690,11 @@ impl_rw_lock_sized_deref!(Arc<T>);
 impl_rw_lock_sized_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> RwLockSized<'a> for Pin<T> where T: Deref, T::Target: RwLockSized<'a>{
+impl<'a, T> RwLockSized<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: RwLockSized<'a>,
+{
     #[inline]
     fn read_func<O>(&'a self, func: impl FnOnce(&Self::Item) -> O) -> O {
         self.deref().read_func(func)
@@ -705,7 +756,11 @@ impl_async_rw_lock_deref!(Arc<T>);
 impl_async_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_async_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> AsyncRwLock<'a> for Pin<T> where T: Deref, T::Target: AsyncRwLock<'a>{
+impl<'a, T> AsyncRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: AsyncRwLock<'a>,
+{
     type AsyncReadGuard = <T::Target as AsyncRwLock<'a>>::AsyncReadGuard;
     type AsyncWriteGuard = <T::Target as AsyncRwLock<'a>>::AsyncWriteGuard;
     type ReadFuture = <T::Target as AsyncRwLock<'a>>::ReadFuture;
@@ -790,7 +845,17 @@ impl_upgrade_rw_lock_deref!(Arc<T>);
 impl_upgrade_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_upgrade_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> UpgradeRwLock<'a> for Pin<T> where T: Deref, T::Target: UpgradeRwLock<'a>, <T::Target as TryRwLock<'a>>::ReadGuard: UpgradeReadGuard<'a, Item=<T::Target as TryRwLock<'a>>::Item, WriteGuard=<T::Target as TryRwLock<'a>>::WriteGuard>{}
+impl<'a, T> UpgradeRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: UpgradeRwLock<'a>,
+    <T::Target as TryRwLock<'a>>::ReadGuard: UpgradeReadGuard<
+        'a,
+        Item = <T::Target as TryRwLock<'a>>::Item,
+        WriteGuard = <T::Target as TryRwLock<'a>>::WriteGuard,
+    >,
+{
+}
 
 // AsyncUpgradeRwLock
 macro_rules! impl_async_upgrade_rw_lock_deref {
@@ -846,7 +911,17 @@ impl_async_upgrade_rw_lock_deref!(Arc<T>);
 impl_async_upgrade_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_async_upgrade_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> AsyncUpgradeRwLock<'a> for Pin<T> where T: Deref, T::Target: AsyncUpgradeRwLock<'a>, <T::Target as AsyncRwLock<'a>>::AsyncReadGuard: AsyncUpgradeReadGuard<'a, Item=<T::Target as TryRwLock<'a>>::Item, AsyncWriteGuard=<T::Target as AsyncRwLock<'a>>::AsyncWriteGuard>{}
+impl<'a, T> AsyncUpgradeRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: AsyncUpgradeRwLock<'a>,
+    <T::Target as AsyncRwLock<'a>>::AsyncReadGuard: AsyncUpgradeReadGuard<
+        'a,
+        Item = <T::Target as TryRwLock<'a>>::Item,
+        AsyncWriteGuard = <T::Target as AsyncRwLock<'a>>::AsyncWriteGuard,
+    >,
+{
+}
 
 // TimeoutRwLock
 macro_rules! impl_timeout_rw_lock_deref {
@@ -893,7 +968,11 @@ impl_timeout_rw_lock_deref!(Arc<T>);
 impl_timeout_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_timeout_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TimeoutRwLock<'a> for Pin<T> where T: Deref, T::Target: TimeoutRwLock<'a>{
+impl<'a, T> TimeoutRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TimeoutRwLock<'a>,
+{
     #[inline]
     fn read_timeout(&'a self, timeout: Duration) -> Option<Self::ReadGuard> {
         self.deref().read_timeout(timeout)
@@ -954,14 +1033,26 @@ impl_timeout_rw_lock_sized_deref!(Arc<T>);
 impl_timeout_rw_lock_sized_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_timeout_rw_lock_sized_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> TimeoutRwLockSized<'a> for Pin<T> where T: Deref, T::Target: TimeoutRwLockSized<'a>{
+impl<'a, T> TimeoutRwLockSized<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TimeoutRwLockSized<'a>,
+{
     #[inline]
-    fn read_timeout_func<O>(&'a self, timeout: Duration, func: impl FnOnce(Option<&Self::Item>) -> O) -> O {
+    fn read_timeout_func<O>(
+        &'a self,
+        timeout: Duration,
+        func: impl FnOnce(Option<&Self::Item>) -> O,
+    ) -> O {
         self.deref().read_timeout_func(timeout, func)
     }
 
     #[inline]
-    fn write_timeout_func<O>(&'a self, timeout: Duration, func: impl FnOnce(Option<&mut Self::Item>) -> O) -> O {
+    fn write_timeout_func<O>(
+        &'a self,
+        timeout: Duration,
+        func: impl FnOnce(Option<&mut Self::Item>) -> O,
+    ) -> O {
         self.deref().write_timeout_func(timeout, func)
     }
 }
@@ -1014,7 +1105,11 @@ impl_async_timeout_rw_lock_deref!(Arc<T>);
 impl_async_timeout_rw_lock_deref!(Box<T>);
 #[cfg(feature = "alloc")]
 impl_async_timeout_rw_lock_deref!(Clone Cow<'a, T>, 'a);
-impl<'a, T> AsyncTimeoutRwLock<'a> for Pin<T> where T: Deref, T::Target: AsyncTimeoutRwLock<'a>{
+impl<'a, T> AsyncTimeoutRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: AsyncTimeoutRwLock<'a>,
+{
     type ReadTimeoutFuture = <T::Target as AsyncTimeoutRwLock<'a>>::ReadTimeoutFuture;
     type WriteTimeoutFuture = <T::Target as AsyncTimeoutRwLock<'a>>::WriteTimeoutFuture;
 
