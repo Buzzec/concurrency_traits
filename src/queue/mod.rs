@@ -7,6 +7,7 @@ mod queue_alloc;
 pub use queue_alloc::*;
 
 use core::future::Future;
+use std::time::Duration;
 
 /// A generic queue that supports try operations
 pub trait TryQueue {
@@ -33,15 +34,37 @@ pub trait Queue: TryQueue {
 pub trait AsyncQueue {
     /// The type the queue holds.
     type AsyncItem;
-    /// The future returned by `append_async`
+    /// The future returned by `push_async`
     type PushFuture: Future<Output = ()>;
-    /// The future returned by `receive_async`
+    /// The future returned by `pop_async`
     type PopFuture: Future<Output = Self::AsyncItem>;
 
     /// Appends to the queue asynchronously.
     fn push_async(&self, value: Self::AsyncItem) -> Self::PushFuture;
     /// Receives from the queue asynchronously.
     fn pop_async(&self) -> Self::PopFuture;
+}
+/// A Queue that can timeout on push and pop operations
+pub trait TimeoutQueue: Queue {
+    /// Appends an item to the end of the queue blocking until appended or timeout
+    fn push_timeout(&self, value: Self::Item, timeout: Duration) -> Result<(), Self::Item>;
+    /// Blocks until an item is received from the queue or timeout
+    fn pop_timeout(&self, timeout: Duration) -> Option<Self::Item>;
+}
+/// An Async Queue that can timeout on push and pop operations
+pub trait AsyncTimeoutQueue: AsyncQueue {
+    /// The future returned by [`AsyncTimeoutQueue::push_timeout_async`]
+    type PushTimeoutFuture: Future<Output = Result<(), Self::AsyncItem>>;
+    /// The future returned by [`AsyncTimeoutQueue::pop_timeout_async`]
+    type PopTimeoutFuture: Future<Output = Option<Self::AsyncItem>>;
+    /// Pushes an item to the queue asynchronously with a timeout
+    fn push_timeout_async(
+        &self,
+        value: Self::AsyncItem,
+        timeout: Duration,
+    ) -> Self::PushTimeoutFuture;
+    /// Pops an item from the queue asynchronously with a timeout
+    fn pop_timeout_async(&self, timeout: Duration) -> Self::PopTimeoutFuture;
 }
 /// A queue that can be attempt to be prepended to
 pub trait TryPrependQueue: TryQueue {

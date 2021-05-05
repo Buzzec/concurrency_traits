@@ -1,3 +1,6 @@
+### concurrency_traits v0.3.1
+- Added `TimeoutQueue` and `AsyncTimeoutQueue`
+
 ## concurrency_traits v0.3.0
 - Made `ThreadSpawner` able to handle errors
 

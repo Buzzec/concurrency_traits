@@ -1208,6 +1208,51 @@ where
 // Ensure can be trait object
 impl<T, PushF, PopF> dyn AsyncQueue<AsyncItem = T, PushFuture = PushF, PopFuture = PopF> {}
 
+// TimeoutQueue
+impl<T: ?Sized> TimeoutQueue for T
+where
+    T: Deref,
+    T::Target: Queue,
+{
+    #[inline]
+    fn push_timeout(&self, value: Self::Item, timeout: Duration) -> Result<(), Self::Item> {
+        self.deref().push_timeout(value, timeout)
+    }
+
+    #[inline]
+    fn pop_timeout(&self, timeout: Duration) -> Option<Self::Item> {
+        self.deref().pop_timeout(timeout)
+    }
+}
+// Ensure can be trait object
+impl<T> dyn TimeoutQueue<Item = T> {}
+
+// AsyncTimeoutQueue
+impl<T: ?Sized> AsyncTimeoutQueue for T
+where
+    T: Deref,
+    T::Target: Queue,
+{
+    type PushTimeoutFuture = <T::Target as AsyncTimeoutQueue>::PushTimeoutFuture;
+    type PopTimeoutFuture = <T::Target as AsyncTimeoutQueue>::PopTimeoutFuture;
+
+    #[inline]
+    fn push_timeout_async(
+        &self,
+        value: Self::AsyncItem,
+        timeout: Duration,
+    ) -> Self::PushTimeoutFuture {
+        self.deref().push_timeout_async(value, timeout)
+    }
+
+    #[inline]
+    fn pop_timeout_async(&self, timeout: Duration) -> Self::PopTimeoutFuture {
+        self.deref().pop_timeout_async(timeout)
+    }
+}
+// Ensure can be trait object
+impl<T> dyn AsyncTimeoutQueue<Item = T> {}
+
 // TryPrependQueue
 impl<T: ?Sized> TryPrependQueue for T
 where
