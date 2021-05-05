@@ -21,14 +21,13 @@ where
 {
     /// Creates a new [`AsyncCustomQueue`] from a backing queue and message
     /// queue
-    pub fn new(queue: Q, message_queue: MQ, thread_spawner: impl ThreadSpawner) -> Self {
+    pub fn new<TS>(queue: Q, message_queue: MQ, thread_spawner: TS) -> Result<(Self, TS::SpawnReturn), TS::SpawnError> where TS: ThreadSpawner{
         let inner = Arc::new(AsyncQueueInner {
             queue,
             message_queue,
         });
         let weak_inner = Arc::downgrade(&inner);
-        thread_spawner.spawn(move || Self::queue_task_function(weak_inner));
-        Self { inner }
+        Ok((Self { inner }, thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?))
     }
 
     fn queue_task_function(inner: Weak<AsyncQueueInner<Q, MQ>>) {
@@ -127,14 +126,13 @@ where
 {
     /// Creates a new [`AsyncCustomPrependQueue`] from a backing queue and
     /// message queue
-    pub fn new(queue: Q, message_queue: MQ, thread_spawner: impl ThreadSpawner) -> Self {
+    pub fn new<TS>(queue: Q, message_queue: MQ, thread_spawner: TS) -> Result<(Self, TS::SpawnReturn), TS::SpawnError> where TS: ThreadSpawner {
         let inner = Arc::new(AsyncQueueInner {
             queue,
             message_queue,
         });
         let weak_inner = Arc::downgrade(&inner);
-        thread_spawner.spawn(move || Self::queue_task_function(weak_inner));
-        Self { inner }
+        Ok((Self { inner }, thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?))
     }
 
     fn queue_task_function(inner: Weak<AsyncQueueInner<Q, MQ>>) {
@@ -261,14 +259,13 @@ where
 {
     /// Creates a new [`AsyncCustomReverseQueue`] from a backing queue and
     /// message queue
-    pub fn new(queue: Q, message_queue: MQ, thread_spawner: impl ThreadSpawner) -> Self {
+    pub fn new<TS>(queue: Q, message_queue: MQ, thread_spawner: TS) -> Result<(Self, TS::SpawnReturn), TS::SpawnError> where TS: ThreadSpawner {
         let inner = Arc::new(AsyncQueueInner {
             queue,
             message_queue,
         });
         let weak_inner = Arc::downgrade(&inner);
-        thread_spawner.spawn(move || Self::queue_task_function(weak_inner));
-        Self { inner }
+        Ok((Self { inner }, thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?))
     }
 
     fn queue_task_function(inner: Weak<AsyncQueueInner<Q, MQ>>) {
@@ -388,14 +385,13 @@ where
 {
     /// Creates a new [`AsyncCustomDoubleEndedQueue`] from a backing queue and
     /// message queue
-    pub fn new(queue: Q, message_queue: MQ, thread_spawner: impl ThreadSpawner) -> Self {
+    pub fn new<TS>(queue: Q, message_queue: MQ, thread_spawner: TS) -> Result<(Self, TS::SpawnReturn), TS::SpawnError> where TS: ThreadSpawner {
         let inner = Arc::new(AsyncQueueInner {
             queue,
             message_queue,
         });
         let weak_inner = Arc::downgrade(&inner);
-        thread_spawner.spawn(move || Self::queue_task_function(weak_inner));
-        Self { inner }
+        Ok((Self { inner }, thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?))
     }
 
     fn queue_task_function(inner: Weak<AsyncQueueInner<Q, MQ>>) {

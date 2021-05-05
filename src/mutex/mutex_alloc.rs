@@ -144,7 +144,7 @@ where
 {
     /// Creates a new [`RawCustomAsyncMutex`] from a [`RawMutex`] and a message
     /// queue.
-    pub fn new(raw_mutex: M, message_queue: Q, spawner: impl ThreadSpawner) -> Self {
+    pub fn new<TS>(raw_mutex: M, message_queue: Q, spawner: TS) -> Result<(Self, TS::SpawnReturn), TS::SpawnError> where TS: ThreadSpawner {
         let out = Self {
             inner: Arc::new(RawCustomAsyncMutexInner {
                 raw_mutex,
@@ -152,8 +152,7 @@ where
             }),
         };
         let raw_mutex_clone = Arc::downgrade(&out.inner);
-        spawner.spawn(move || Self::thread_function(raw_mutex_clone));
-        out
+        Ok((out, spawner.spawn(move || Self::thread_function(raw_mutex_clone))?))
     }
 
     fn thread_function(inner: Weak<RawCustomAsyncMutexInner<M, Q>>) {
