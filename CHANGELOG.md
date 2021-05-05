@@ -1,3 +1,6 @@
+## concurrency_traits v0.3.0
+- Made `ThreadSpawner` able to handle errors
+
 ## concurrency_traits v0.2.0
 - Added implementations for std lib and parking_lot
 - Changed blanked `Deref` impls to targeted impls

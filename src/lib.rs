@@ -30,7 +30,10 @@ pub trait ThreadSpawner {
     /// The error that can be returned
     type SpawnError;
     /// Spawns a new thread running `function`
-    fn spawn(self, function: impl FnOnce() + 'static + Send) -> Result<Self::SpawnReturn, Self::SpawnError>;
+    fn spawn(
+        self,
+        function: impl FnOnce() + 'static + Send,
+    ) -> Result<Self::SpawnReturn, Self::SpawnError>;
 }
 
 // TODO: Replace future associated types and boxed futures with existential types when stabilized https://rust-lang.github.io/rfcs/2071-impl-trait-existential-types.html
