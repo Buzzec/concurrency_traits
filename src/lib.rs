@@ -38,14 +38,14 @@ pub trait TimeFunctions {
         + Copy;
 
     /// Get the current instant. Analog for [`std::time::Instant::now`].
-    fn current_time(&self) -> Self::InstantType;
+    fn current_time() -> Self::InstantType;
 }
 /// Functions to allow the current thread to interact in ways a thread might need to.
 pub trait ThreadFunctions {
     /// Sleeps the current thread for a specified duration. Analog for [`std::thread::sleep`].
-    fn sleep(&self, duration: Duration);
+    fn sleep(duration: Duration);
     /// Yields the current thread to the OS. Analog for [`std::thread::yield_now`].
-    fn yield_now(&self);
+    fn yield_now();
 }
 /// Functions to spawn new threads. If infallibility is required look to [`ThreadSpawner`]. If a result is needed from the launched thread look to [`TryResultThreadSpawner`] or [`ResultThreadSpawner`]. `O` is the result of the thread function.
 pub trait TryThreadSpawner<O>
@@ -58,10 +58,7 @@ where
     type SpawnError;
 
     /// Attempts to spawn a thread returning a result of [`Self::ThreadHandle`] and [`Self::SpawnError`].
-    fn try_spawn(
-        &self,
-        func: impl FnOnce() -> O + 'static + Send,
-    ) -> Result<Self::ThreadHandle, Self::SpawnError>;
+    fn try_spawn(func: impl FnOnce() -> O + 'static + Send) -> Result<Self::ThreadHandle, Self::SpawnError>;
 }
 /// Same as a [`TryThreadSpawner`] with an [`Infallible`] [`TryThreadSpawner::SpawnError`]. This is auto-implemented with [`TryThreadSpawner`] when possible. If a result is needed from the launched thread look to [`ResultThreadSpawner`].
 pub trait ThreadSpawner<O>: Sized + TryThreadSpawner<O, SpawnError = Infallible>
@@ -69,14 +66,14 @@ where
     O: Send + 'static,
 {
     /// Spawns a thread returning a [`Self::ThreadHandle`]. Analog to [`std::thread::spawn`]. Will be faster on nightly due to [`Result::unwrap_unchecked`].
-    fn spawn(&self, func: impl FnOnce() -> O + 'static + Send) -> Self::ThreadHandle {
+    fn spawn(func: impl FnOnce() -> O + 'static + Send) -> Self::ThreadHandle {
         #[cfg(not(feature = "nightly"))]
         {
-            self.try_spawn(func).unwrap()
+            Self::try_spawn(func).unwrap()
         }
         #[cfg(feature = "nightly")]
         unsafe {
-            self.try_spawn(func).unwrap_unchecked()
+            Self::try_spawn(func).unwrap_unchecked()
         }
     }
 }
@@ -120,14 +117,14 @@ pub trait ThreadParker {
     type ThreadId;
 
     /// Parks the current thread. Analog for [`std::thread::park`].
-    fn park(&self);
+    fn park();
     /// Unparks a thread. Analog for [`std::thread::Thread::unpark`].
-    fn unpark(&self, thread: Self::ThreadId);
+    fn unpark(thread: Self::ThreadId);
 }
 /// Functions to allow parking functionality with timeout for threads.
 pub trait ThreadTimeoutParker: ThreadParker {
     /// Parks the current thread with a timeout. Analog to [`std::thread::park_timeout`].
-    fn park_timeout(&self, timeout: Duration);
+    fn park_timeout(timeout: Duration);
 }
 /// A handle to a spawned thread. Analog for [`std::thread::JoinHandle`].
 pub trait ThreadHandle {
@@ -186,17 +183,17 @@ mod std_thread_impls {
         type InstantType = std::time::Instant;
 
         #[inline]
-        fn current_time(&self) -> Self::InstantType {
+        fn current_time() -> Self::InstantType {
             std::time::Instant::now()
         }
     }
     impl ThreadFunctions for StdThreadFunctions {
         #[inline]
-        fn sleep(&self, duration: Duration) {
+        fn sleep(duration: Duration) {
             std::thread::sleep(duration)
         }
 
-        fn yield_now(&self) {
+        fn yield_now() {
             std::thread::yield_now()
         }
     }
@@ -207,10 +204,7 @@ mod std_thread_impls {
         type ThreadHandle = std::thread::JoinHandle<O>;
         type SpawnError = Infallible;
 
-        fn try_spawn(
-            &self,
-            func: impl FnOnce() -> O + 'static + Send,
-        ) -> Result<Self::ThreadHandle, Self::SpawnError> {
+        fn try_spawn(func: impl FnOnce() -> O + 'static + Send) -> Result<Self::ThreadHandle, Self::SpawnError> {
             Ok(std::thread::spawn(func))
         }
     }
@@ -218,12 +212,12 @@ mod std_thread_impls {
         type ThreadId = std::thread::Thread;
 
         #[inline]
-        fn park(&self) {
+        fn park() {
             std::thread::park()
         }
 
         #[inline]
-        fn unpark(&self, thread: Self::ThreadId) {
+        fn unpark(thread: Self::ThreadId) {
             thread.unpark()
         }
     }

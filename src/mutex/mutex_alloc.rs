@@ -147,7 +147,6 @@ where
     pub fn new<TS>(
         raw_mutex: M,
         message_queue: Q,
-        spawner: TS,
     ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: TryThreadSpawner<()>,
@@ -161,7 +160,7 @@ where
         let raw_mutex_clone = Arc::downgrade(&out.inner);
         Ok((
             out,
-            spawner.try_spawn(move || Self::thread_function(raw_mutex_clone))?,
+            TS::try_spawn(move || Self::thread_function(raw_mutex_clone))?,
         ))
     }
 

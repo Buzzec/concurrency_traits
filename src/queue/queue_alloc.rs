@@ -24,7 +24,6 @@ where
     pub fn new<TS>(
         queue: Q,
         message_queue: MQ,
-        thread_spawner: TS,
     ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
@@ -36,7 +35,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
+            TS::try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
@@ -139,7 +138,6 @@ where
     pub fn new<TS>(
         queue: Q,
         message_queue: MQ,
-        thread_spawner: TS,
     ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
@@ -151,7 +149,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
+            TS::try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
@@ -282,7 +280,6 @@ where
     pub fn new<TS>(
         queue: Q,
         message_queue: MQ,
-        thread_spawner: TS,
     ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
@@ -294,7 +291,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
+            TS::try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
@@ -418,7 +415,6 @@ where
     pub fn new<TS>(
         queue: Q,
         message_queue: MQ,
-        thread_spawner: TS,
     ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
@@ -430,7 +426,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
+            TS::try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
