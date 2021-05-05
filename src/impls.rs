@@ -1212,7 +1212,7 @@ impl<T, PushF, PopF> dyn AsyncQueue<AsyncItem = T, PushFuture = PushF, PopFuture
 impl<T: ?Sized> TimeoutQueue for T
 where
     T: Deref,
-    T::Target: Queue,
+    T::Target: TimeoutQueue,
 {
     #[inline]
     fn push_timeout(&self, value: Self::Item, timeout: Duration) -> Result<(), Self::Item> {
@@ -1231,7 +1231,7 @@ impl<T> dyn TimeoutQueue<Item = T> {}
 impl<T: ?Sized> AsyncTimeoutQueue for T
 where
     T: Deref,
-    T::Target: Queue,
+    T::Target: AsyncTimeoutQueue,
 {
     type PushTimeoutFuture = <T::Target as AsyncTimeoutQueue>::PushTimeoutFuture;
     type PopTimeoutFuture = <T::Target as AsyncTimeoutQueue>::PopTimeoutFuture;
@@ -1251,7 +1251,16 @@ where
     }
 }
 // Ensure can be trait object
-impl<T> dyn AsyncTimeoutQueue<Item = T> {}
+impl<T, PushF, PopF, PushTF, PopTF>
+    dyn AsyncTimeoutQueue<
+        AsyncItem = T,
+        PushFuture = PushF,
+        PopFuture = PopF,
+        PushTimeoutFuture = PushTF,
+        PopTimeoutFuture = PopTF,
+    >
+{
+}
 
 // TryPrependQueue
 impl<T: ?Sized> TryPrependQueue for T
