@@ -25,9 +25,9 @@ where
         queue: Q,
         message_queue: MQ,
         thread_spawner: TS,
-    ) -> Result<(Self, TS::SpawnReturn), TS::SpawnError>
+    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
-        TS: ThreadSpawner,
+        TS: ThreadSpawner<()>,
     {
         let inner = Arc::new(AsyncQueueInner {
             queue,
@@ -36,7 +36,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?,
+            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
@@ -140,9 +140,9 @@ where
         queue: Q,
         message_queue: MQ,
         thread_spawner: TS,
-    ) -> Result<(Self, TS::SpawnReturn), TS::SpawnError>
+    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
-        TS: ThreadSpawner,
+        TS: ThreadSpawner<()>,
     {
         let inner = Arc::new(AsyncQueueInner {
             queue,
@@ -151,7 +151,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?,
+            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
@@ -283,9 +283,9 @@ where
         queue: Q,
         message_queue: MQ,
         thread_spawner: TS,
-    ) -> Result<(Self, TS::SpawnReturn), TS::SpawnError>
+    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
-        TS: ThreadSpawner,
+        TS: ThreadSpawner<()>,
     {
         let inner = Arc::new(AsyncQueueInner {
             queue,
@@ -294,7 +294,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?,
+            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 
@@ -419,9 +419,9 @@ where
         queue: Q,
         message_queue: MQ,
         thread_spawner: TS,
-    ) -> Result<(Self, TS::SpawnReturn), TS::SpawnError>
+    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
-        TS: ThreadSpawner,
+        TS: ThreadSpawner<()>,
     {
         let inner = Arc::new(AsyncQueueInner {
             queue,
@@ -430,7 +430,7 @@ where
         let weak_inner = Arc::downgrade(&inner);
         Ok((
             Self { inner },
-            thread_spawner.spawn(move || Self::queue_task_function(weak_inner))?,
+            thread_spawner.try_spawn(move || Self::queue_task_function(weak_inner))?,
         ))
     }
 

@@ -1,6 +1,6 @@
 use crate::mutex::*;
 use crate::queue::Queue;
-use crate::ThreadSpawner;
+use crate::TryThreadSpawner;
 use alloc::boxed::Box;
 use alloc::sync::{Arc, Weak};
 use core::future::Future;
@@ -148,9 +148,9 @@ where
         raw_mutex: M,
         message_queue: Q,
         spawner: TS,
-    ) -> Result<(Self, TS::SpawnReturn), TS::SpawnError>
+    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
-        TS: ThreadSpawner,
+        TS: TryThreadSpawner<()>,
     {
         let out = Self {
             inner: Arc::new(RawCustomAsyncMutexInner {
@@ -161,7 +161,7 @@ where
         let raw_mutex_clone = Arc::downgrade(&out.inner);
         Ok((
             out,
-            spawner.spawn(move || Self::thread_function(raw_mutex_clone))?,
+            spawner.try_spawn(move || Self::thread_function(raw_mutex_clone))?,
         ))
     }
 
