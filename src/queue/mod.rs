@@ -7,7 +7,7 @@ mod queue_alloc;
 pub use queue_alloc::*;
 
 use core::future::Future;
-use std::time::Duration;
+use core::time::Duration;
 
 /// A generic queue that supports try operations
 pub trait TryQueue {
