@@ -38,14 +38,14 @@ pub trait TimeFunctions {
         + Copy;
 
     /// Get the current instant. Analog for [`std::time::Instant::now`].
-    fn current_time(self) -> Self::InstantType;
+    fn current_time(&self) -> Self::InstantType;
 }
 /// Functions to allow the current thread to interact in ways a thread might need to.
 pub trait ThreadFunctions {
     /// Sleeps the current thread for a specified duration. Analog for [`std::thread::sleep`].
-    fn sleep(self, duration: Duration);
+    fn sleep(&self, duration: Duration);
     /// Yields the current thread to the OS. Analog for [`std::thread::yield_now`].
-    fn yield_now(self);
+    fn yield_now(&self);
 }
 /// Functions to spawn new threads. If infallibility is required look to [`ThreadSpawner`]. If a result is needed from the launched thread look to [`TryResultThreadSpawner`] or [`ResultThreadSpawner`]. `O` is the result of the thread function.
 pub trait TryThreadSpawner<O>
@@ -59,7 +59,7 @@ where
 
     /// Attempts to spawn a thread returning a result of [`Self::ThreadHandle`] and [`Self::SpawnError`].
     fn try_spawn(
-        self,
+        &self,
         func: impl FnOnce() -> O + 'static + Send,
     ) -> Result<Self::ThreadHandle, Self::SpawnError>;
 }
@@ -69,7 +69,7 @@ where
     O: Send + 'static,
 {
     /// Spawns a thread returning a [`Self::ThreadHandle`]. Analog to [`std::thread::spawn`]. Will be faster on nightly due to [`Result::unwrap_unchecked`].
-    fn spawn(self, func: impl FnOnce() -> O + 'static + Send) -> Self::ThreadHandle {
+    fn spawn(&self, func: impl FnOnce() -> O + 'static + Send) -> Self::ThreadHandle {
         #[cfg(not(feature = "nightly"))]
         {
             self.try_spawn(func).unwrap()
@@ -120,14 +120,14 @@ pub trait ThreadParker {
     type ThreadId;
 
     /// Parks the current thread. Analog for [`std::thread::park`].
-    fn park(self);
+    fn park(&self);
     /// Unparks a thread. Analog for [`std::thread::Thread::unpark`].
-    fn unpark(self, thread: Self::ThreadId);
+    fn unpark(&self, thread: Self::ThreadId);
 }
 /// Functions to allow parking functionality with timeout for threads.
-pub trait ThreadTimeoutParker: ThreadParker{
+pub trait ThreadTimeoutParker: ThreadParker {
     /// Parks the current thread with a timeout. Analog to [`std::thread::park_timeout`].
-    fn park_timeout(self, timeout: Duration);
+    fn park_timeout(&self, timeout: Duration);
 }
 /// A handle to a spawned thread. Analog for [`std::thread::JoinHandle`].
 pub trait ThreadHandle {
@@ -165,14 +165,12 @@ pub trait JoinableHandle: Sized + TryJoinableHandle<ThreadError = Infallible> {
 impl<T> JoinableHandle for T where T: TryJoinableHandle<ThreadError = Infallible> {}
 
 /// A full concurrent system with all functions accessible by reference. This Trait should be implemented where possible.
-pub trait ConcurrentSystem<'a, O>: 'static
+pub trait ConcurrentSystem<O>: 'static
 where
-    &'a Self: TimeFunctions
+    Self: TimeFunctions
         + ThreadFunctions
         + TryThreadSpawner<O>
-        + ThreadParker<
-            ThreadId = <<&'a Self as TryThreadSpawner<O>>::ThreadHandle as ThreadHandle>::ThreadId,
-        >,
+        + ThreadParker<ThreadId = <Self::ThreadHandle as ThreadHandle>::ThreadId>,
     O: Send + 'static,
 {
 }
@@ -182,27 +180,27 @@ where
 #[derive(Copy, Clone, Debug)]
 pub struct StdThreadFunctions;
 #[cfg(feature = "std")]
-mod std_thread_impls{
+mod std_thread_impls {
     use super::*;
-    impl TimeFunctions for &StdThreadFunctions {
+    impl TimeFunctions for StdThreadFunctions {
         type InstantType = std::time::Instant;
 
         #[inline]
-        fn current_time(self) -> Self::InstantType {
+        fn current_time(&self) -> Self::InstantType {
             std::time::Instant::now()
         }
     }
-    impl ThreadFunctions for &StdThreadFunctions {
+    impl ThreadFunctions for StdThreadFunctions {
         #[inline]
-        fn sleep(self, duration: Duration) {
+        fn sleep(&self, duration: Duration) {
             std::thread::sleep(duration)
         }
 
-        fn yield_now(self) {
+        fn yield_now(&self) {
             std::thread::yield_now()
         }
     }
-    impl<O> TryThreadSpawner<O> for &StdThreadFunctions
+    impl<O> TryThreadSpawner<O> for StdThreadFunctions
     where
         O: Send + 'static,
     {
@@ -210,22 +208,22 @@ mod std_thread_impls{
         type SpawnError = Infallible;
 
         fn try_spawn(
-            self,
+            &self,
             func: impl FnOnce() -> O + 'static + Send,
         ) -> Result<Self::ThreadHandle, Self::SpawnError> {
             Ok(std::thread::spawn(func))
         }
     }
-    impl ThreadParker for &StdThreadFunctions {
+    impl ThreadParker for StdThreadFunctions {
         type ThreadId = std::thread::Thread;
 
         #[inline]
-        fn park(self) {
+        fn park(&self) {
             std::thread::park()
         }
 
         #[inline]
-        fn unpark(self, thread: Self::ThreadId) {
+        fn unpark(&self, thread: Self::ThreadId) {
             thread.unpark()
         }
     }
@@ -246,8 +244,7 @@ mod std_thread_impls{
             self.join()
         }
     }
-    impl<'a, O> ConcurrentSystem<'a, O> for StdThreadFunctions where O: Send + 'static{}
+    impl<O> ConcurrentSystem<O> for StdThreadFunctions where O: Send + 'static {}
 }
-
 
 // TODO: Replace future associated types and boxed futures with existential types when stabilized https://rust-lang.github.io/rfcs/2071-impl-trait-existential-types.html
