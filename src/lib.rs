@@ -170,7 +170,7 @@ where
     Self: TimeFunctions
         + ThreadFunctions
         + TryThreadSpawner<O>
-        + ThreadParker<ThreadId = <Self::ThreadHandle as ThreadHandle>::ThreadId>,
+        + ThreadParker<ThreadId = <<Self as TryThreadSpawner<O>>::ThreadHandle as ThreadHandle>::ThreadId>,
     O: Send + 'static,
 {
 }
