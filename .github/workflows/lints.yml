@@ -41,7 +41,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: ${{ matrix.mode }} --no-default-features --features nightly ${{ matrix.features }} -- -D warnings
+          args: ${{ matrix.mode }} --no-default-features ${{ matrix.features }} -- -D warnings
 
   clippy-nightly:
     name: Clippy
@@ -75,7 +75,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: ${{ matrix.mode }} --no-default-features ${{ matrix.features }} -- -D warnings
+          args: ${{ matrix.mode }} --no-default-features --features nightly ${{ matrix.features }} -- -D warnings
 
   doc:
     name: Doc
