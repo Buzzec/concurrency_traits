@@ -179,7 +179,7 @@ where
         }
     }
 }
-impl<M, Q> RawTryMutex for RawCustomAsyncMutex<M, Q>
+unsafe impl<M, Q> RawTryMutex for RawCustomAsyncMutex<M, Q>
 where
     M: 'static + RawMutex + Send + Sync,
     Q: 'static + Queue<Item = RawCustomAsyncMutexMessage> + Send + Sync,
@@ -194,7 +194,7 @@ where
         self.inner.raw_mutex.unlock()
     }
 }
-impl<M, Q> RawMutex for RawCustomAsyncMutex<M, Q>
+unsafe impl<M, Q> RawMutex for RawCustomAsyncMutex<M, Q>
 where
     M: 'static + RawMutex + Send + Sync,
     Q: 'static + Queue<Item = RawCustomAsyncMutexMessage> + Send + Sync,
@@ -204,7 +204,7 @@ where
         self.inner.raw_mutex.lock();
     }
 }
-impl<M, Q> RawAsyncMutex for RawCustomAsyncMutex<M, Q>
+unsafe impl<M, Q> RawAsyncMutex for RawCustomAsyncMutex<M, Q>
 where
     M: 'static + RawMutex + Send + Sync,
     Q: 'static + Queue<Item = RawCustomAsyncMutexMessage> + Send + Sync,

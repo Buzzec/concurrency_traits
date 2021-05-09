@@ -1,4 +1,4 @@
-use crate::{Mutex, MutexSized, TimeoutMutex, TimeoutMutexSized, TryMutex, TryMutexSized};
+use crate::mutex::{Mutex, MutexSized, TimeoutMutex, TimeoutMutexSized, TryMutex, TryMutexSized};
 use parking_lot::MutexGuard;
 use std::time::Duration;
 

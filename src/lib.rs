@@ -7,23 +7,20 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-mod mutex;
-mod queue;
-mod rw_lock;
-mod stack;
+pub mod mutex;
+pub mod queue;
+pub mod rw_lock;
+pub mod stack;
 
 #[cfg(feature = "alloc")]
 mod alloc_impls;
 mod impls;
 
-pub use mutex::*;
-pub use queue::*;
-pub use rw_lock::*;
-pub use stack::*;
 
 use core::convert::Infallible;
-use core::ops::{Add, Sub};
+use core::ops::{Add, Sub, AddAssign, SubAssign};
 use core::time::Duration;
+use core::fmt::Debug;
 
 trait EnsureSend: Send {}
 trait EnsureSync: Sync {}
@@ -32,7 +29,9 @@ trait EnsureSync: Sync {}
 pub trait TimeFunctions {
     /// The type of an instant for this system. Analog for [`std::time::Instant`].
     type InstantType: Add<Duration, Output = Self::InstantType>
+        + AddAssign<Duration>
         + Sub<Duration, Output = Self::InstantType>
+        + SubAssign<Duration>
         + Sub<Self::InstantType, Output = Duration>
         + Ord
         + Copy;
@@ -61,11 +60,11 @@ where
     fn try_spawn(func: impl FnOnce() -> O + 'static + Send) -> Result<Self::ThreadHandle, Self::SpawnError>;
 }
 /// Same as a [`TryThreadSpawner`] with an [`Infallible`] [`TryThreadSpawner::SpawnError`]. This is auto-implemented with [`TryThreadSpawner`] when possible. If a result is needed from the launched thread look to [`ResultThreadSpawner`].
-pub trait ThreadSpawner<O>: Sized + TryThreadSpawner<O, SpawnError = Infallible>
+pub trait ThreadSpawner<O>: TryThreadSpawner<O, SpawnError = Infallible>
 where
     O: Send + 'static,
 {
-    /// Spawns a thread returning a [`Self::ThreadHandle`]. Analog to [`std::thread::spawn`]. Will be faster on nightly due to [`Result::unwrap_unchecked`].
+    /// Spawns a thread returning a [`TryThreadSpawner::ThreadHandle`]. Analog to [`std::thread::spawn`]. Will be faster on nightly due to [`Result::unwrap_unchecked`].
     fn spawn(func: impl FnOnce() -> O + 'static + Send) -> Self::ThreadHandle {
         #[cfg(not(feature = "nightly"))]
         {
@@ -114,12 +113,14 @@ where
 /// Functions to allow parking functionality for threads.
 pub trait ThreadParker {
     /// The type of a thread portable id. Analog for [`std::thread::Thread`].
-    type ThreadId;
+    type ThreadId: Debug;
 
-    /// Parks the current thread. Analog for [`std::thread::park`].
+    /// Parks the current thread. Analog for [`std::thread::park`]. This may spuriously wake.
     fn park();
     /// Unparks a thread. Analog for [`std::thread::Thread::unpark`].
     fn unpark(thread: Self::ThreadId);
+    /// Gets the handle to the current thread. Analog for [`std::thread::current`].
+    fn current_thread() -> Self::ThreadId;
 }
 /// Functions to allow parking functionality with timeout for threads.
 pub trait ThreadTimeoutParker: ThreadParker {
@@ -135,7 +136,7 @@ pub trait ThreadHandle {
     fn thread_id(&self) -> &Self::ThreadId;
 }
 /// A handle to a spawned thread that can be joined, blocking the current thread until the target is finished. Analog for [`std::thread::JoinHandle`]. If infallibility is needed look to [`JoinableHandle`].
-pub trait TryJoinableHandle: ThreadHandle {
+pub trait TryJoinableHandle: Sized + ThreadHandle {
     /// The output of joining this thread.
     type Output;
     /// The possible error when joining this thread,
@@ -219,6 +220,11 @@ mod std_thread_impls {
         #[inline]
         fn unpark(thread: Self::ThreadId) {
             thread.unpark()
+        }
+
+        #[inline]
+        fn current_thread() -> Self::ThreadId {
+            std::thread::current()
         }
     }
     impl<O> ThreadHandle for std::thread::JoinHandle<O> {

@@ -1141,115 +1141,22 @@ impl<'a, I: ?Sized, RG, WG, ARG, AWG, RF, WF, RTF, WTF>
 }
 
 // TryQueue
-impl<T: ?Sized> TryQueue for T
-where
-    T: Deref,
-    T::Target: TryQueue,
-{
-    type Item = <T::Target as TryQueue>::Item;
-
-    #[inline]
-    fn try_push(&self, value: Self::Item) -> Result<(), Self::Item> {
-        self.deref().try_push(value)
-    }
-
-    #[inline]
-    fn try_pop(&self) -> Option<Self::Item> {
-        self.deref().try_pop()
-    }
-
-    #[inline]
-    fn clear(&self) {
-        self.deref().clear()
-    }
-}
 // Ensure can be trait object
 impl<T> dyn TryQueue<Item = T> {}
 
 // Queue
-impl<T: ?Sized> Queue for T
-where
-    T: Deref,
-    T::Target: Queue,
-{
-    #[inline]
-    fn push(&self, value: Self::Item) {
-        self.deref().push(value)
-    }
-
-    #[inline]
-    fn pop(&self) -> Self::Item {
-        self.deref().pop()
-    }
-}
 // Ensure can be trait object
 impl<T> dyn Queue<Item = T> {}
 
 // AsyncQueue
-impl<T: ?Sized> AsyncQueue for T
-where
-    T: Deref,
-    T::Target: AsyncQueue,
-{
-    type AsyncItem = <T::Target as AsyncQueue>::AsyncItem;
-    type PushFuture = <T::Target as AsyncQueue>::PushFuture;
-    type PopFuture = <T::Target as AsyncQueue>::PopFuture;
-
-    #[inline]
-    fn push_async(&self, value: Self::AsyncItem) -> Self::PushFuture {
-        self.deref().push_async(value)
-    }
-
-    #[inline]
-    fn pop_async(&self) -> Self::PopFuture {
-        self.deref().pop_async()
-    }
-}
 // Ensure can be trait object
 impl<T, PushF, PopF> dyn AsyncQueue<AsyncItem = T, PushFuture = PushF, PopFuture = PopF> {}
 
 // TimeoutQueue
-impl<T: ?Sized> TimeoutQueue for T
-where
-    T: Deref,
-    T::Target: TimeoutQueue,
-{
-    #[inline]
-    fn push_timeout(&self, value: Self::Item, timeout: Duration) -> Result<(), Self::Item> {
-        self.deref().push_timeout(value, timeout)
-    }
-
-    #[inline]
-    fn pop_timeout(&self, timeout: Duration) -> Option<Self::Item> {
-        self.deref().pop_timeout(timeout)
-    }
-}
 // Ensure can be trait object
 impl<T> dyn TimeoutQueue<Item = T> {}
 
 // AsyncTimeoutQueue
-impl<T: ?Sized> AsyncTimeoutQueue for T
-where
-    T: Deref,
-    T::Target: AsyncTimeoutQueue,
-{
-    type PushTimeoutFuture = <T::Target as AsyncTimeoutQueue>::PushTimeoutFuture;
-    type PopTimeoutFuture = <T::Target as AsyncTimeoutQueue>::PopTimeoutFuture;
-
-    #[inline]
-    fn push_timeout_async(
-        &self,
-        value: Self::AsyncItem,
-        timeout: Duration,
-    ) -> Self::PushTimeoutFuture {
-        self.deref().push_timeout_async(value, timeout)
-    }
-
-    #[inline]
-    fn pop_timeout_async(&self, timeout: Duration) -> Self::PopTimeoutFuture {
-        self.deref().pop_timeout_async(timeout)
-    }
-}
 // Ensure can be trait object
 impl<T, PushF, PopF, PushTF, PopTF>
     dyn AsyncTimeoutQueue<
@@ -1263,46 +1170,14 @@ impl<T, PushF, PopF, PushTF, PopTF>
 }
 
 // TryPrependQueue
-impl<T: ?Sized> TryPrependQueue for T
-where
-    T: Deref,
-    T::Target: TryPrependQueue,
-{
-    #[inline]
-    fn try_push_front(&self, value: Self::Item) -> Result<(), Self::Item> {
-        self.deref().try_push_front(value)
-    }
-}
 // Ensure can be trait object
 impl<T> dyn TryPrependQueue<Item = T> {}
 
 // PrependQueue
-impl<T: ?Sized> PrependQueue for T
-where
-    T: Deref,
-    T::Target: PrependQueue,
-{
-    #[inline]
-    fn push_front(&self, value: Self::Item) {
-        self.deref().push_front(value)
-    }
-}
 // Ensure can be trait object
 impl<T> dyn PrependQueue<Item = T> {}
 
 // AsyncPrependQueue
-impl<T: ?Sized> AsyncPrependQueue for T
-where
-    T: Deref,
-    T::Target: AsyncPrependQueue,
-{
-    type PushBackFuture = <T::Target as AsyncPrependQueue>::PushBackFuture;
-
-    #[inline]
-    fn push_front_async(&self, value: Self::AsyncItem) -> Self::PushBackFuture {
-        self.deref().push_front_async(value)
-    }
-}
 // Ensure can be trait object
 impl<T, PushF, PopF, PrepF>
     dyn AsyncPrependQueue<
@@ -1315,46 +1190,14 @@ impl<T, PushF, PopF, PrepF>
 }
 
 // TryReverseQueue
-impl<T: ?Sized> TryReverseQueue for T
-where
-    T: Deref,
-    T::Target: TryReverseQueue,
-{
-    #[inline]
-    fn try_pop_back(&self) -> Option<Self::Item> {
-        self.deref().try_pop_back()
-    }
-}
 // Ensure can be trait object
 impl<T> dyn TryReverseQueue<Item = T> {}
 
 // ReverseQueue
-impl<T: ?Sized> ReverseQueue for T
-where
-    T: Deref,
-    T::Target: ReverseQueue,
-{
-    #[inline]
-    fn pop_back(&self) -> Self::Item {
-        self.deref().pop_back()
-    }
-}
 // Ensure can be trait object
 impl<T> dyn ReverseQueue<Item = T> {}
 
 // AsyncReverseQueue
-impl<T: ?Sized> AsyncReverseQueue for T
-where
-    T: Deref,
-    T::Target: AsyncReverseQueue,
-{
-    type PopBackFuture = <T::Target as AsyncReverseQueue>::PopBackFuture;
-
-    #[inline]
-    fn pop_back_async(&self) -> Self::PopBackFuture {
-        self.deref().pop_back_async()
-    }
-}
 // Ensure can be trait object
 impl<T, PushF, PopF, PBF>
     dyn AsyncReverseQueue<AsyncItem = T, PushFuture = PushF, PopFuture = PopF, PopBackFuture = PBF>
@@ -1362,49 +1205,14 @@ impl<T, PushF, PopF, PBF>
 }
 
 // TryPeekQueue
-impl<T: ?Sized> TryPeekQueue for T
-where
-    T: Deref,
-    T::Target: TryPeekQueue,
-{
-    type Peeked = <T::Target as TryPeekQueue>::Peeked;
-
-    #[inline]
-    fn try_peek(&self) -> Option<Self::Peeked> {
-        self.deref().try_peek()
-    }
-}
 // Ensure can be trait object
 impl<T, P> dyn TryPeekQueue<Item = T, Peeked = P> {}
 
 // PeekQueue
-impl<T: ?Sized> PeekQueue for T
-where
-    T: Deref,
-    T::Target: PeekQueue,
-{
-    #[inline]
-    fn peek(&self) -> Self::Peeked {
-        self.deref().peek()
-    }
-}
 // Ensure can be trait object
 impl<T, P> dyn PeekQueue<Item = T, Peeked = P> {}
 
 // AsyncPeekQueue
-impl<T: ?Sized> AsyncPeekQueue for T
-where
-    T: Deref,
-    T::Target: AsyncPeekQueue,
-{
-    type AsyncPeeked = <T::Target as AsyncPeekQueue>::AsyncPeeked;
-    type PeekFuture = <T::Target as AsyncPeekQueue>::PeekFuture;
-
-    #[inline]
-    fn peek_async(&self) -> Self::PeekFuture {
-        self.deref().peek_async()
-    }
-}
 // Ensure can be trait object
 impl<T, P, PushF, PopF, PeekF>
     dyn AsyncPeekQueue<
@@ -1418,45 +1226,14 @@ impl<T, P, PushF, PopF, PeekF>
 }
 
 // TryPeekReverseQueue
-impl<T: ?Sized> TryPeekReverseQueue for T
-where
-    T: Deref,
-    T::Target: TryPeekReverseQueue,
-{
-    #[inline]
-    fn try_peek_back(&self) -> Option<Self::Peeked> {
-        self.deref().try_peek_back()
-    }
-}
 // Ensure can be trait object
 impl<T, P> dyn TryPeekReverseQueue<Item = T, Peeked = P> {}
 
 // PeekReverseQueue
-impl<T: ?Sized> PeekReverseQueue for T
-where
-    T: Deref,
-    T::Target: PeekReverseQueue,
-{
-    #[inline]
-    fn peek_back(&self) -> Self::Peeked {
-        self.deref().peek_back()
-    }
-}
 // Ensure can be trait object
 impl<T, P> dyn PeekReverseQueue<Item = T, Peeked = P> {}
 
 // AsyncPeekReverseQueue
-impl<T: ?Sized> AsyncPeekReverseQueue for T
-where
-    T: Deref,
-    T::Target: AsyncPeekReverseQueue,
-{
-    type PeekBackFuture = <T::Target as AsyncPeekReverseQueue>::PeekBackFuture;
-
-    fn peek_back_async(&self) -> Self::PeekBackFuture {
-        self.deref().peek_back_async()
-    }
-}
 // Ensure can be trait object
 impl<T, P, PushF, PopF, PeekF, PopBF, PeekBF>
     dyn AsyncPeekReverseQueue<
@@ -1472,32 +1249,14 @@ impl<T, P, PushF, PopF, PeekF, PopBF, PeekBF>
 }
 
 // TryDoubleEndedQueue
-impl<T: ?Sized> TryDoubleEndedQueue for T
-where
-    T: Deref,
-    T::Target: TryDoubleEndedQueue,
-{
-}
 // Ensure can be trait object
 impl<T> dyn TryDoubleEndedQueue<Item = T> {}
 
 // DoubleEndedQueue
-impl<T: ?Sized> DoubleEndedQueue for T
-where
-    T: Deref,
-    T::Target: DoubleEndedQueue,
-{
-}
 // Ensure can be trait object
 impl<T> dyn DoubleEndedQueue<Item = T> {}
 
 // AsyncDoubleEndedQueue
-impl<T: ?Sized> AsyncDoubleEndedQueue for T
-where
-    T: Deref,
-    T::Target: AsyncDoubleEndedQueue,
-{
-}
 // Ensure can be trait object
 impl<T, PushF, PopF, PushBF, PopBF>
     dyn AsyncDoubleEndedQueue<
@@ -1511,61 +1270,13 @@ impl<T, PushF, PopF, PushBF, PopBF>
 }
 
 // TryStack
-impl<T: ?Sized> TryStack for T
-where
-    T: Deref,
-    T::Target: TryStack,
-{
-    type Item = <T::Target as TryStack>::Item;
-
-    #[inline]
-    fn try_push(&self, value: Self::Item) -> Result<(), Self::Item> {
-        self.deref().try_push(value)
-    }
-
-    #[inline]
-    fn try_pop(&self) -> Option<Self::Item> {
-        self.deref().try_pop()
-    }
-}
 // Ensure can be trait object
 impl<T> dyn TryStack<Item = T> {}
 
 // Stack
-impl<T: ?Sized> Stack for T
-where
-    T: Deref,
-    T::Target: Stack,
-{
-    #[inline]
-    fn push(&self, value: Self::Item) {
-        self.deref().push(value)
-    }
-
-    #[inline]
-    fn pop(&self) -> Self::Item {
-        self.deref().pop()
-    }
-}
 // Ensure can be trait object
 impl<T> dyn Stack<Item = T> {}
 
 // AsyncStack
-impl<T: ?Sized> AsyncStack for T
-where
-    T: Deref,
-    T::Target: AsyncStack,
-{
-    type PushFuture = <T::Target as AsyncStack>::PushFuture;
-    type PopFuture = <T::Target as AsyncStack>::PopFuture;
-
-    fn push_async(&self, value: Self::Item) -> Self::PushFuture {
-        self.deref().push_async(value)
-    }
-
-    fn pop_async(&self) -> Self::PopFuture {
-        self.deref().pop_async()
-    }
-}
 // Ensure can be trait object
 impl<T, PushF, PopF> dyn AsyncStack<Item = T, PushFuture = PushF, PopFuture = PopF> {}

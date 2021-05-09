@@ -3,6 +3,9 @@
 #[cfg(feature = "alloc")]
 mod queue_alloc;
 
+#[cfg(feature = "impl_crossbeam")]
+mod queue_crossbeam;
+
 #[cfg(feature = "alloc")]
 pub use queue_alloc::*;
 

@@ -11,7 +11,17 @@ mod mutex_std;
 mod mutex_parking_lot;
 
 #[cfg(feature = "alloc")]
+mod park_mutex;
+
+mod spin_lock;
+
+#[cfg(feature = "alloc")]
 pub use mutex_alloc::*;
+
+#[cfg(feature = "alloc")]
+pub use park_mutex::*;
+
+pub use spin_lock::*;
 
 use crate::{EnsureSend, EnsureSync};
 
@@ -127,7 +137,7 @@ pub trait AsyncTimeoutMutex<'a>: AsyncMutex<'a> {
 }
 
 /// A raw mutex that can be tried and holds no data.
-pub trait RawTryMutex {
+pub unsafe trait RawTryMutex {
     /// Locks the mutex, non-blocking. Returns true if locked.
     fn try_lock(&self) -> bool;
     /// # Safety
@@ -136,24 +146,24 @@ pub trait RawTryMutex {
     unsafe fn unlock(&self);
 }
 /// A raw mutex that hold no data but the lock itself.
-pub trait RawMutex: RawTryMutex {
+pub unsafe trait RawMutex: RawTryMutex {
     /// Locks the mutex, blocking.
     fn lock(&self);
 }
 /// A raw async mutex that hold no data but the lock itself.
-pub trait RawAsyncMutex: RawTryMutex {
+pub unsafe trait RawAsyncMutex: RawTryMutex {
     /// The future returned by [`RawAsyncMutex::lock_async`]
     type LockFuture: Future<Output = ()>;
     /// Locks the mutex asynchronously
     fn lock_async(&self) -> Self::LockFuture;
 }
 /// A raw mutex that can be timed out and holds no data.
-pub trait RawTimeoutMutex: RawMutex {
+pub unsafe trait RawTimeoutMutex: RawMutex {
     /// Locks the mutex on a timeout. Returns true if locked.
     fn lock_timeout(&self, timeout: Duration) -> bool;
 }
 /// A raw async mutex that can be timed out and holds no data.
-pub trait RawAsyncTimeoutMutex: RawAsyncMutex {
+pub unsafe trait RawAsyncTimeoutMutex: RawAsyncMutex {
     /// The future returned by [`RawAsyncTimeoutMutex::lock_timeout_async`]
     type LockTimeoutFuture: Future<Output = bool>;
     /// Locks the mutex on a timeout asynchronously. Returns true if locked.

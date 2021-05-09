@@ -225,7 +225,7 @@ pub trait AsyncTimeoutRwLock<'a>: AsyncRwLock<'a> {
 }
 
 /// A raw try rw lock that stores no data
-pub trait RawTryRwLock {
+pub unsafe trait RawTryRwLock {
     /// Tries to add a reader to the lock. Returns true if successful.
     fn try_add_reader(&self) -> bool;
     /// Tries to add a writer to the lock. Returns true if successful.
@@ -242,21 +242,21 @@ pub trait RawTryRwLock {
     unsafe fn remove_writer(&self);
 }
 /// A raw rw lock that stores no data
-pub trait RawRwLock: RawTryRwLock {
+pub unsafe trait RawRwLock: RawTryRwLock {
     /// Blocks until a reader is added to this lock
     fn add_reader(&self);
     /// Blocks until a writer is added to this lock
     fn add_writer(&self);
 }
 /// A raw timeout rw lock that stores no data
-pub trait RawTimeoutRwLock: RawRwLock {
+pub unsafe trait RawTimeoutRwLock: RawRwLock {
     /// Adds a reader to this lock with a timeout. Returns true if successful
     fn add_reader_timeout(&self, timeout: Duration) -> bool;
     /// Adds a writer to this lock with a timeout. Returns true if successful
     fn add_writer_timeout(&self, timeout: Duration) -> bool;
 }
 /// A raw async rw lock that stores no data
-pub trait RawAsyncRwLock: RawTryRwLock {
+pub unsafe trait RawAsyncRwLock: RawTryRwLock {
     /// The future returned by [`RawAsyncRwLock::add_reader_async`]
     type AddReaderFuture: Future<Output = ()>;
     /// The future returned by [`RawAsyncRwLock::add_writer_async`]
@@ -267,7 +267,7 @@ pub trait RawAsyncRwLock: RawTryRwLock {
     fn add_writer_async(&self) -> Self::AddWriterFuture;
 }
 /// A raw async timeout rw lock that stores no data
-pub trait RawAsyncTimeoutRwLock: RawAsyncRwLock {
+pub unsafe trait RawAsyncTimeoutRwLock: RawAsyncRwLock {
     /// The future returned by
     /// [`RawAsyncTimeoutRwLock::add_reader_timeout_async`]
     type AddReaderTimeoutFuture: Future<Output = bool>;

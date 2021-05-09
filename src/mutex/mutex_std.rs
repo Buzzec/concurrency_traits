@@ -1,6 +1,6 @@
-use crate::{Mutex, MutexSized, TryMutex, TryMutexSized};
 use std::sync;
 use std::sync::{MutexGuard, TryLockError};
+use crate::mutex::{TryMutex, TryMutexSized, Mutex, MutexSized};
 
 impl<'a, T: ?Sized> TryMutex<'a> for sync::Mutex<T>
 where

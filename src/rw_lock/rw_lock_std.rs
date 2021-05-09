@@ -1,6 +1,6 @@
-use crate::{RwLock, RwLockSized, TryRwLock, TryRwLockSized};
 use std::sync;
 use std::sync::{RwLockReadGuard, RwLockWriteGuard, TryLockError};
+use crate::rw_lock::*;
 
 impl<'a, T: ?Sized> TryRwLock<'a> for sync::RwLock<T>
 where
