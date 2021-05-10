@@ -1,9 +1,11 @@
-## concurrency_traits v0.4.0
-- Added general system traits
+## concurrency_traits v0.5.0
 - Added ThreadTimeoutParker to StdThreadFunctions
 - Changed a lot of blanket impls
 - Added more custom mutexes and queues
 - Added `crossbeam` support through `impl_crossbeam` feature
+
+## concurrency_traits v0.4.0
+- Added general system traits
 
 ### concurrency_traits v0.3.1
 - Added `TimeoutQueue` and `AsyncTimeoutQueue`
