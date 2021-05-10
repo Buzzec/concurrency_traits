@@ -21,6 +21,7 @@ jobs:
           - --features alloc
           - --features std
           - --features impl_parking_lot
+          - --features impl_crossbeam
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -50,6 +51,7 @@ jobs:
           - --features alloc
           - --features std
           - --features impl_parking_lot
+          - --features impl_crossbeam
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -73,11 +75,15 @@ jobs:
 
     strategy:
       matrix:
+        nightly:
+          - ""
+          - --features nightly
         features:
           - ""
           - --features alloc
           - --features std
           - --features impl_parking_lot
+          - --features impl_crossbeam
 
     steps:
       - name: Checkout sources
@@ -95,4 +101,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: miri
-          args: test --no-default-features ${{ matrix.features }}
+          args: test --no-default-features ${{ matrix.features }} ${{ matrix.nightly }}
