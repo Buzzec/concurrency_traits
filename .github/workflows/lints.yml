@@ -25,7 +25,7 @@ jobs:
           - --features std
           - --features impl_parking_lot
           - --features impl_crossbeam
-          - --features impl_parking_lot impl_crossbeam
+          - --features impl_parking_lot,impl_crossbeam
 
     steps:
       - name: Checkout sources
@@ -61,7 +61,7 @@ jobs:
           - --features std
           - --features impl_parking_lot
           - --features impl_crossbeam
-          - --features impl_parking_lot impl_crossbeam
+          - --features impl_parking_lot,impl_crossbeam
 
     steps:
       - name: Checkout sources
