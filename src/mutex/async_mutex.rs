@@ -4,6 +4,8 @@ use crate::queue::TryQueue;
 use simple_futures::complete_future::{CompleteFutureHandle, CompleteFuture};
 /// A mutex that can only be accessed through async await or try operations.
 /// ```
+/// # #[cfg(feature = "std")]
+/// # {
 /// use std::ops::Deref;
 /// use concurrency_traits::mutex::{FullAsyncMutex, AsyncMutex};
 /// use std::task::{Context, Waker, Wake};
@@ -25,6 +27,7 @@ use simple_futures::complete_future::{CompleteFutureHandle, CompleteFuture};
 /// });
 ///
 /// assert!(!future.as_mut().poll(&mut Context::from_waker(&Arc::new(NullWaker).into())).is_pending())
+/// # }
 /// ```
 pub type FullAsyncMutex<T, Q> = CustomMutex<T, RawFullAsyncMutex<Q>>;
 
