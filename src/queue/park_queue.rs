@@ -112,10 +112,9 @@ where
         loop {
             drop(guard);
             let current_time = CS::current_time();
-            if current_time >= end {
-                return None;
+            if current_time < end {
+                CS::park_timeout(end - current_time);
             }
-            CS::park_timeout(end - current_time);
             guard = self.inner.lock();
             if self_swap.1.load(Ordering::Acquire) {
                 if let Some(value) = guard.queue.pop_front() {
