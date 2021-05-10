@@ -118,7 +118,10 @@ where
             guard.parkers.push_back(Arc::downgrade(&self_id));
             loop {
                 drop(guard);
-                CS::park_timeout(end - CS::current_time());
+                let time = CS::current_time();
+                if end < time{
+                    CS::park_timeout(end - CS::current_time());
+                }
                 guard = self.inner.lock();
                 if let Some(ref holder) = guard.holder {
                     if holder == self_id.deref() {

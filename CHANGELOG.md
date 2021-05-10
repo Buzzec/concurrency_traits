@@ -1,5 +1,6 @@
 ### concurrency_traits v0.5.0
 - Fixed overflow bug in `ParkQueue`
+- Fixed overflow bug in `RawParkMutex`
 
 ## ~~concurrency_traits v0.5.0~~
 - Added ThreadTimeoutParker to StdThreadFunctions
