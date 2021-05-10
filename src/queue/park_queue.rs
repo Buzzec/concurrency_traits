@@ -123,8 +123,10 @@ struct ParkQueueInner<T, CS> where CS: ThreadParker{
 mod test{
     use crate::queue::test::{try_queue_test, queue_test};
     use crate::queue::ParkQueue;
+    #[cfg(feature = "std")]
     use crate::StdThreadFunctions;
 
+    #[cfg(feature = "std")]
     #[test]
     fn function_test(){
         try_queue_test(ParkQueue::<_, StdThreadFunctions>::default());
