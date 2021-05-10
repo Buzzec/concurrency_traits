@@ -1,5 +1,5 @@
 use crate::mutex::{CustomMutex, RawTryMutex, RawAsyncMutex};
-use std::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicBool, Ordering};
 use crate::queue::TryQueue;
 use simple_futures::complete_future::{CompleteFutureHandle, CompleteFuture};
 /// A mutex that can only be accessed through async await or try operations.
@@ -29,6 +29,7 @@ use simple_futures::complete_future::{CompleteFutureHandle, CompleteFuture};
 pub type FullAsyncMutex<T, Q> = CustomMutex<T, RawFullAsyncMutex<Q>>;
 
 /// The raw portion of [`FullAsyncMutex`].
+#[derive(Debug)]
 pub struct RawFullAsyncMutex<Q> {
     locked: AtomicBool,
     waiting_queue: Q,

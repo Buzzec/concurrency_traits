@@ -1,7 +1,9 @@
 //! Generic mutex that only needs lock and unlock functionality to be auto
 //! implemented.
 
+#[cfg(feature = "alloc")]
 mod async_mutex;
+#[cfg(feature = "alloc")]
 pub use async_mutex::*;
 
 #[cfg(feature = "alloc")]
