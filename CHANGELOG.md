@@ -1,4 +1,7 @@
-### concurrency_traits v0.5.0
+### concurrency_traits v0.5.2
+- Added `FullAsyncMutex`
+
+### concurrency_traits v0.5.1
 - Fixed overflow bug in `ParkQueue`
 - Fixed overflow bug in `RawParkMutex`
 
