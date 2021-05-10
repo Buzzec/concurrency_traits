@@ -13,7 +13,7 @@ pub struct RawSpinLock<CS>{
 }
 impl<CS> Default for RawSpinLock<CS>{
     fn default() -> Self {
-        Self{ locked: AtomicBool::new(true), phantom_cs: Default::default() }
+        Self{ locked: AtomicBool::new(false), phantom_cs: Default::default() }
     }
 }
 unsafe impl<CS> RawTryMutex for RawSpinLock<CS>{

@@ -379,7 +379,7 @@ mod test {
             }
         }
     }
-    impl RawTryMutex for AtomicTryMutex {
+    unsafe impl RawTryMutex for AtomicTryMutex {
         fn try_lock(&self) -> bool {
             self.unlocked.swap(false, Ordering::SeqCst)
         }
@@ -420,7 +420,7 @@ mod test {
             }
         }
     }
-    impl RawTryMutex for TestMutex {
+    unsafe impl RawTryMutex for TestMutex {
         fn try_lock(&self) -> bool {
             let mut out = false;
             swap(
@@ -440,7 +440,7 @@ mod test {
             self.parkers.notify_one();
         }
     }
-    impl RawMutex for TestMutex {
+    unsafe impl RawMutex for TestMutex {
         fn lock(&self) {
             let mut guard = self.unlocked.lock().expect("Poisoned");
             let mut out = false;

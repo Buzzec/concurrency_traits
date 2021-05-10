@@ -154,3 +154,25 @@ pub trait TryDoubleEndedQueue: TryPrependQueue + TryReverseQueue {}
 pub trait DoubleEndedQueue: PrependQueue + ReverseQueue + TryDoubleEndedQueue {}
 /// An async queue that can be written and read from both ends
 pub trait AsyncDoubleEndedQueue: AsyncPrependQueue + AsyncReverseQueue {}
+
+#[cfg(test)]
+pub(super) mod test{
+    use crate::queue::{TryQueue, Queue};
+    pub fn try_queue_test<Q>(queue: Q) where Q: TryQueue<Item=usize>{
+        assert!(queue.try_pop().is_none());
+        assert!(queue.try_push(100).is_ok());
+        assert_eq!(queue.try_pop(), Some(100));
+        assert!(queue.try_push(200).is_ok());
+        queue.clear();
+        assert!(queue.try_pop().is_none());
+    }
+
+    pub fn queue_test<Q>(queue: Q) where Q: Queue<Item=usize>{
+        assert!(queue.try_pop().is_none());
+        queue.push(100);
+        assert_eq!(queue.pop(), 100);
+        queue.push(200);
+        queue.clear();
+        assert!(queue.try_pop().is_none());
+    }
+}

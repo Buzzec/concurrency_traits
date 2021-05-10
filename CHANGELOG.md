@@ -1,5 +1,6 @@
 ## concurrency_traits v0.4.0
 - Added general system traits
+- Added ThreadTimeoutParker to StdThreadFunctions
 
 ### concurrency_traits v0.3.1
 - Added `TimeoutQueue` and `AsyncTimeoutQueue`

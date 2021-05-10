@@ -114,3 +114,16 @@ struct ParkQueueInner<T, CS> where CS: ThreadParker{
     /// True if should wake
     parkers: VecDeque<Weak<(CS::ThreadId, AtomicBool)>>,
 }
+
+#[cfg(test)]
+mod test{
+    use crate::queue::test::{try_queue_test, queue_test};
+    use crate::queue::ParkQueue;
+    use crate::StdThreadFunctions;
+
+    #[test]
+    fn function_test(){
+        try_queue_test(ParkQueue::<_, StdThreadFunctions>::default());
+        queue_test(ParkQueue::<_, StdThreadFunctions>::default());
+    }
+}
