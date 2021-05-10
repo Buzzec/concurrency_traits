@@ -1,20 +1,14 @@
 use core::sync::atomic::{AtomicBool, Ordering};
-use alloc::sync::Arc;
-use atomic_swapping::option::AtomicSwapOption;
+use alloc::sync::{Arc, Weak};
 use core::time::Duration;
 use alloc::collections::VecDeque;
 use crate::{ThreadParker, ThreadFunctions, ThreadTimeoutParker, TimeFunctions};
 use crate::mutex::{SpinLock, RawTryMutex, RawMutex, RawTimeoutMutex, Mutex, CustomMutex};
+use core::ops::Deref;
 
 /// A mutex that relies on parking the thread that locks it.
 pub type ParkMutex<T, CS> = CustomMutex<T, RawParkMutex<CS>>;
 
-#[derive(Debug)]
-struct RawParkMutexInner<CS> where CS: ThreadParker{
-    /// Only needs to be set when unparking a thread.
-    holder: Option<CS::ThreadId>,
-    parkers: VecDeque<Arc<AtomicSwapOption<CS::ThreadId>>>,
-}
 /// The raw portion of [`ParkMutex`].
 #[derive(Debug)]
 pub struct RawParkMutex<CS> where CS: ThreadParker{
@@ -52,9 +46,9 @@ unsafe impl<CS> RawTryMutex for RawParkMutex<CS> where CS: ThreadParker + Thread
                     break;
                 },
                 Some(parker) => {
-                    if let Some(parker) = parker.take(){
-                        guard.holder = Some(parker.clone());
-                        CS::unpark(parker);
+                    if let Some(parker) = parker.upgrade(){
+                        guard.holder = Some(parker.deref().clone());
+                        CS::unpark(parker.deref().clone());
                         break;
                     }
                 }
@@ -66,15 +60,14 @@ unsafe impl<CS> RawMutex for RawParkMutex<CS> where CS: ThreadParker + ThreadFun
     fn lock(&self) {
         let mut guard = self.inner.lock();
         if !self.try_lock() {
-            let self_id = CS::current_thread();
-            let self_id_swap = Arc::new(AtomicSwapOption::from_value(self_id.clone()));
-            guard.parkers.push_back(self_id_swap);
+            let self_id = Arc::new(CS::current_thread());
+            guard.parkers.push_back(Arc::downgrade(&self_id));
             loop{
                 drop(guard);
                 CS::park();
                 guard = self.inner.lock();
                 if let Some(ref holder) = guard.holder{
-                    if holder == &self_id{
+                    if holder == self_id.deref(){
                         // We have been unparked
                         break;
                     }
@@ -91,29 +84,29 @@ unsafe impl<CS> RawTimeoutMutex for RawParkMutex<CS> where CS: ThreadTimeoutPark
         }
         else{
             let end = CS::current_time() + timeout;
-            let self_id = CS::current_thread();
-            let self_id_swap = Arc::new(AtomicSwapOption::from_value(self_id.clone()));
-            guard.parkers.push_back(self_id_swap.clone());
+            let self_id = Arc::new(CS::current_thread());
+            guard.parkers.push_back(Arc::downgrade(&self_id));
             loop {
                 drop(guard);
                 CS::park_timeout(end - CS::current_time());
                 guard = self.inner.lock();
                 if let Some(ref holder) = guard.holder{
-                    if holder == &self_id{
+                    if holder == self_id.deref(){
                         // We have been unparked
                         return true;
                     }
                 }
                 if CS::current_time() >= end{
-                    #[cfg(debug_assertions)] {
-                        assert!(self_id_swap.take().is_some());
-                    }
-                    #[cfg(not(debug_assertions))] {
-                        self_id_swap.set(None);
-                    }
                     return false;
                 }
             }
         }
     }
+}
+
+#[derive(Debug)]
+struct RawParkMutexInner<CS> where CS: ThreadParker{
+    /// Only needs to be set when unparking a thread.
+    holder: Option<CS::ThreadId>,
+    parkers: VecDeque<Weak<CS::ThreadId>>,
 }

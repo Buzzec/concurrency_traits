@@ -2,12 +2,16 @@
 
 #[cfg(feature = "alloc")]
 mod queue_alloc;
+#[cfg(feature = "alloc")]
+pub use queue_alloc::*;
+
+#[cfg(feature = "alloc")]
+mod park_queue;
+#[cfg(feature = "alloc")]
+pub use park_queue::*;
 
 #[cfg(feature = "impl_crossbeam")]
 mod queue_crossbeam;
-
-#[cfg(feature = "alloc")]
-pub use queue_alloc::*;
 
 use core::future::Future;
 use core::time::Duration;

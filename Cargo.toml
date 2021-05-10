@@ -23,8 +23,8 @@ atomic_swapping = { version = "0.1.0", default-features = false }
 
 [features]
 default = ["std"]
-alloc = ["simple_futures"]
+alloc = ["simple_futures", "crossbeam", "crossbeam/alloc"]
 std = ["alloc"]
 nightly = []
 impl_parking_lot = ["std", "parking_lot"]
-impl_crossbeam = ["crossbeam", "alloc", "crossbeam/alloc"]
+impl_crossbeam = ["alloc"]
