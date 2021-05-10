@@ -21,10 +21,7 @@ where
 {
     /// Creates a new [`AsyncCustomQueue`] from a backing queue and message
     /// queue
-    pub fn new<TS>(
-        queue: Q,
-        message_queue: MQ,
-    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
+    pub fn new<TS>(queue: Q, message_queue: MQ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
     {
@@ -135,10 +132,7 @@ where
 {
     /// Creates a new [`AsyncCustomPrependQueue`] from a backing queue and
     /// message queue
-    pub fn new<TS>(
-        queue: Q,
-        message_queue: MQ,
-    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
+    pub fn new<TS>(queue: Q, message_queue: MQ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
     {
@@ -277,10 +271,7 @@ where
 {
     /// Creates a new [`AsyncCustomReverseQueue`] from a backing queue and
     /// message queue
-    pub fn new<TS>(
-        queue: Q,
-        message_queue: MQ,
-    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
+    pub fn new<TS>(queue: Q, message_queue: MQ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
     {
@@ -412,10 +403,7 @@ where
 {
     /// Creates a new [`AsyncCustomDoubleEndedQueue`] from a backing queue and
     /// message queue
-    pub fn new<TS>(
-        queue: Q,
-        message_queue: MQ,
-    ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
+    pub fn new<TS>(queue: Q, message_queue: MQ) -> Result<(Self, TS::ThreadHandle), TS::SpawnError>
     where
         TS: ThreadSpawner<()>,
     {

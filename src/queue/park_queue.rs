@@ -1,7 +1,7 @@
-use crate::mutex::{SpinLock, Mutex};
-use crate::{ThreadParker, ThreadFunctions, ThreadTimeoutParker, TimeFunctions};
+use crate::mutex::{Mutex, SpinLock};
+use crate::queue::{Queue, TimeoutQueue, TryQueue};
+use crate::{ThreadFunctions, ThreadParker, ThreadTimeoutParker, TimeFunctions};
 use alloc::collections::VecDeque;
-use crate::queue::{TryQueue, Queue, TimeoutQueue};
 use alloc::sync::{Arc, Weak};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
@@ -12,27 +12,37 @@ pub type ParkQueueStd<T> = ParkQueue<T, crate::StdThreadFunctions>;
 
 /// A queue based on [`VecDeque`]s and parking.
 #[derive(Debug)]
-pub struct ParkQueue<T, CS> where CS: ThreadParker{
+pub struct ParkQueue<T, CS>
+where
+    CS: ThreadParker,
+{
     inner: SpinLock<ParkQueueInner<T, CS>, CS>,
 }
-impl<T, CS> Default for ParkQueue<T, CS> where CS: ThreadParker{
+impl<T, CS> Default for ParkQueue<T, CS>
+where
+    CS: ThreadParker,
+{
     fn default() -> Self {
-        Self{
-            inner: SpinLock::new(ParkQueueInner{
+        Self {
+            inner: SpinLock::new(ParkQueueInner {
                 queue: Default::default(),
                 parkers: VecDeque::new(),
-            })
+            }),
         }
     }
 }
-impl<T, CS> TryQueue for ParkQueue<T, CS> where CS: ThreadParker + ThreadFunctions, CS::ThreadId: Clone{
+impl<T, CS> TryQueue for ParkQueue<T, CS>
+where
+    CS: ThreadParker + ThreadFunctions,
+    CS::ThreadId: Clone,
+{
     type Item = T;
 
     fn try_push(&self, value: Self::Item) -> Result<(), Self::Item> {
         let mut guard = self.inner.lock();
         guard.queue.push_back(value);
-        while let Some(parker) = guard.parkers.pop_front(){
-            if let Some(parker) = parker.upgrade(){
+        while let Some(parker) = guard.parkers.pop_front() {
+            if let Some(parker) = parker.upgrade() {
                 parker.1.store(true, Ordering::Release);
                 CS::unpark(parker.0.clone());
                 break;
@@ -49,63 +59,70 @@ impl<T, CS> TryQueue for ParkQueue<T, CS> where CS: ThreadParker + ThreadFunctio
         self.inner.lock().queue.clear();
     }
 }
-impl<T, CS> Queue for ParkQueue<T, CS> where CS: ThreadParker + ThreadFunctions, CS::ThreadId: Clone{
+impl<T, CS> Queue for ParkQueue<T, CS>
+where
+    CS: ThreadParker + ThreadFunctions,
+    CS::ThreadId: Clone,
+{
     fn push(&self, value: Self::Item) {
-        self.try_push(value).unwrap_or_else(|_|panic!("Try push should not fail!"));
+        self.try_push(value)
+            .unwrap_or_else(|_| panic!("Try push should not fail!"));
     }
 
     fn pop(&self) -> Self::Item {
         let mut guard = self.inner.lock();
-        if let Some(value) = guard.queue.pop_front(){
+        if let Some(value) = guard.queue.pop_front() {
             return value;
         }
         let self_swap = Arc::new((CS::current_thread(), AtomicBool::new(false)));
         guard.parkers.push_back(Arc::downgrade(&self_swap));
-        loop{
+        loop {
             drop(guard);
             CS::park();
             guard = self.inner.lock();
-            if self_swap.1.load(Ordering::Acquire){
-                if let Some(value) = guard.queue.pop_front(){
+            if self_swap.1.load(Ordering::Acquire) {
+                if let Some(value) = guard.queue.pop_front() {
                     return value;
-                }
-                else{
+                } else {
                     guard.parkers.push_front(Arc::downgrade(&self_swap));
                 }
             }
         }
     }
 }
-impl<T, CS> TimeoutQueue for ParkQueue<T, CS> where CS: ThreadTimeoutParker + ThreadFunctions + TimeFunctions, CS::ThreadId: Clone{
+impl<T, CS> TimeoutQueue for ParkQueue<T, CS>
+where
+    CS: ThreadTimeoutParker + ThreadFunctions + TimeFunctions,
+    CS::ThreadId: Clone,
+{
     fn push_timeout(&self, value: Self::Item, _timeout: Duration) -> Result<(), Self::Item> {
-        self.try_push(value).unwrap_or_else(|_|panic!("Try push should not fail!"));
+        self.try_push(value)
+            .unwrap_or_else(|_| panic!("Try push should not fail!"));
         Ok(())
     }
 
     fn pop_timeout(&self, timeout: Duration) -> Option<Self::Item> {
         let end = CS::current_time() + timeout;
         let mut guard = self.inner.lock();
-        if let Some(value) = guard.queue.pop_front(){
+        if let Some(value) = guard.queue.pop_front() {
             return Some(value);
         }
         let self_swap = Arc::new((CS::current_thread(), AtomicBool::new(false)));
         guard.parkers.push_back(Arc::downgrade(&self_swap));
-        loop{
+        loop {
             drop(guard);
             CS::park_timeout(end - CS::current_time());
             guard = self.inner.lock();
-            if self_swap.1.load(Ordering::Acquire){
-                if let Some(value) = guard.queue.pop_front(){
+            if self_swap.1.load(Ordering::Acquire) {
+                if let Some(value) = guard.queue.pop_front() {
                     return Some(value);
-                }
-                else if CS::current_time() >= end{
+                } else if CS::current_time() >= end {
                     return None;
-                }
-                else{
+                } else {
                     guard.parkers.push_front(Arc::downgrade(&self_swap));
                 }
             }
-            if CS::current_time() >= end{
+            if CS::current_time() >= end {
                 return None;
             }
         }
@@ -113,22 +130,25 @@ impl<T, CS> TimeoutQueue for ParkQueue<T, CS> where CS: ThreadTimeoutParker + Th
 }
 
 #[derive(Debug)]
-struct ParkQueueInner<T, CS> where CS: ThreadParker{
+struct ParkQueueInner<T, CS>
+where
+    CS: ThreadParker,
+{
     queue: VecDeque<T>,
     /// True if should wake
     parkers: VecDeque<Weak<(CS::ThreadId, AtomicBool)>>,
 }
 
 #[cfg(test)]
-mod test{
-    use crate::queue::test::{try_queue_test, queue_test};
+mod test {
+    use crate::queue::test::{queue_test, try_queue_test};
     use crate::queue::ParkQueue;
     #[cfg(feature = "std")]
     use crate::StdThreadFunctions;
 
     #[cfg(feature = "std")]
     #[test]
-    fn function_test(){
+    fn function_test() {
         try_queue_test(ParkQueue::<_, StdThreadFunctions>::default());
         queue_test(ParkQueue::<_, StdThreadFunctions>::default());
     }

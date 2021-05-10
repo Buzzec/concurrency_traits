@@ -16,11 +16,10 @@ pub mod stack;
 mod alloc_impls;
 mod impls;
 
-
 use core::convert::Infallible;
-use core::ops::{Add, Sub, AddAssign, SubAssign};
-use core::time::Duration;
 use core::fmt::Debug;
+use core::ops::{Add, AddAssign, Sub, SubAssign};
+use core::time::Duration;
 
 trait EnsureSend: Send {}
 trait EnsureSync: Sync {}
@@ -57,7 +56,9 @@ where
     type SpawnError;
 
     /// Attempts to spawn a thread returning a result of [`Self::ThreadHandle`] and [`Self::SpawnError`].
-    fn try_spawn(func: impl FnOnce() -> O + 'static + Send) -> Result<Self::ThreadHandle, Self::SpawnError>;
+    fn try_spawn(
+        func: impl FnOnce() -> O + 'static + Send,
+    ) -> Result<Self::ThreadHandle, Self::SpawnError>;
 }
 /// Same as a [`TryThreadSpawner`] with an [`Infallible`] [`TryThreadSpawner::SpawnError`]. This is auto-implemented with [`TryThreadSpawner`] when possible. If a result is needed from the launched thread look to [`ResultThreadSpawner`].
 pub trait ThreadSpawner<O>: TryThreadSpawner<O, SpawnError = Infallible>
@@ -168,7 +169,9 @@ where
     Self: TimeFunctions
         + ThreadFunctions
         + TryThreadSpawner<O>
-        + ThreadParker<ThreadId = <<Self as TryThreadSpawner<O>>::ThreadHandle as ThreadHandle>::ThreadId>,
+        + ThreadParker<
+            ThreadId = <<Self as TryThreadSpawner<O>>::ThreadHandle as ThreadHandle>::ThreadId,
+        >,
     O: Send + 'static,
 {
 }
@@ -205,7 +208,9 @@ mod std_thread_impls {
         type ThreadHandle = std::thread::JoinHandle<O>;
         type SpawnError = Infallible;
 
-        fn try_spawn(func: impl FnOnce() -> O + 'static + Send) -> Result<Self::ThreadHandle, Self::SpawnError> {
+        fn try_spawn(
+            func: impl FnOnce() -> O + 'static + Send,
+        ) -> Result<Self::ThreadHandle, Self::SpawnError> {
             Ok(std::thread::spawn(func))
         }
     }
@@ -227,7 +232,7 @@ mod std_thread_impls {
             std::thread::current()
         }
     }
-    impl ThreadTimeoutParker for StdThreadFunctions{
+    impl ThreadTimeoutParker for StdThreadFunctions {
         fn park_timeout(timeout: Duration) {
             std::thread::park_timeout(timeout)
         }

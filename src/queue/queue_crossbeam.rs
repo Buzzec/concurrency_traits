@@ -1,7 +1,7 @@
-use crossbeam::queue::{ArrayQueue, SegQueue};
 use crate::queue::TryQueue;
+use crossbeam::queue::{ArrayQueue, SegQueue};
 
-impl<T> TryQueue for ArrayQueue<T>{
+impl<T> TryQueue for ArrayQueue<T> {
     type Item = T;
 
     fn try_push(&self, value: Self::Item) -> Result<(), Self::Item> {
@@ -16,7 +16,7 @@ impl<T> TryQueue for ArrayQueue<T>{
         while self.pop().is_some() {}
     }
 }
-impl<T> TryQueue for SegQueue<T>{
+impl<T> TryQueue for SegQueue<T> {
     type Item = T;
 
     fn try_push(&self, value: Self::Item) -> Result<(), Self::Item> {
@@ -29,6 +29,6 @@ impl<T> TryQueue for SegQueue<T>{
     }
 
     fn clear(&self) {
-        while self.pop().is_some(){}
+        while self.pop().is_some() {}
     }
 }

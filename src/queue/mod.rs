@@ -156,9 +156,12 @@ pub trait DoubleEndedQueue: PrependQueue + ReverseQueue + TryDoubleEndedQueue {}
 pub trait AsyncDoubleEndedQueue: AsyncPrependQueue + AsyncReverseQueue {}
 
 #[cfg(test)]
-pub(super) mod test{
-    use crate::queue::{TryQueue, Queue};
-    pub fn try_queue_test<Q>(queue: Q) where Q: TryQueue<Item=usize>{
+pub(super) mod test {
+    use crate::queue::{Queue, TryQueue};
+    pub fn try_queue_test<Q>(queue: Q)
+    where
+        Q: TryQueue<Item = usize>,
+    {
         assert!(queue.try_pop().is_none());
         assert!(queue.try_push(100).is_ok());
         assert_eq!(queue.try_pop(), Some(100));
@@ -167,7 +170,10 @@ pub(super) mod test{
         assert!(queue.try_pop().is_none());
     }
 
-    pub fn queue_test<Q>(queue: Q) where Q: Queue<Item=usize>{
+    pub fn queue_test<Q>(queue: Q)
+    where
+        Q: Queue<Item = usize>,
+    {
         assert!(queue.try_pop().is_none());
         queue.push(100);
         assert_eq!(queue.pop(), 100);
