@@ -26,8 +26,8 @@ rand = "0.8.3"
 
 [features]
 default = ["std"]
-alloc = ["simple_futures", "crossbeam", "crossbeam/alloc"]
+alloc = ["simple_futures"]
 std = ["alloc"]
 nightly = []
 impl_parking_lot = ["std", "parking_lot"]
-impl_crossbeam = ["alloc"]
+impl_crossbeam = ["alloc", "crossbeam", "crossbeam/alloc"]
