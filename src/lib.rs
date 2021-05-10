@@ -227,6 +227,11 @@ mod std_thread_impls {
             std::thread::current()
         }
     }
+    impl ThreadTimeoutParker for StdThreadFunctions{
+        fn park_timeout(timeout: Duration) {
+            std::thread::park_timeout(timeout)
+        }
+    }
     impl<O> ThreadHandle for std::thread::JoinHandle<O> {
         type ThreadId = std::thread::Thread;
 
