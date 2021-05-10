@@ -3,6 +3,10 @@ use core::marker::PhantomData;
 use crate::mutex::{CustomMutex, RawTryMutex, RawMutex};
 use crate::ThreadFunctions;
 
+/// A [`SpinLock`] that uses std functions.
+#[cfg(feature = "std")]
+pub type SpinLockStd<T> = SpinLock<T, crate::StdThreadFunctions>;
+
 /// A lock that spins while being locked. Should only be locked for very short operations.
 pub type SpinLock<T, CS> = CustomMutex<T, RawSpinLock<CS>>;
 /// The raw portion of [`SpinLock`].

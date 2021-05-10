@@ -6,6 +6,10 @@ use alloc::sync::{Arc, Weak};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::time::Duration;
 
+/// A [`ParkQueue`] that uses std functions.
+#[cfg(feature = "std")]
+pub type ParkQueueStd<T> = ParkQueue<T, crate::StdThreadFunctions>;
+
 /// A queue based on [`VecDeque`]s and parking.
 #[derive(Debug)]
 pub struct ParkQueue<T, CS> where CS: ThreadParker{

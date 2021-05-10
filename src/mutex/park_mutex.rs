@@ -6,7 +6,15 @@ use crate::{ThreadParker, ThreadFunctions, ThreadTimeoutParker, TimeFunctions};
 use crate::mutex::{SpinLock, RawTryMutex, RawMutex, RawTimeoutMutex, Mutex, CustomMutex};
 use core::ops::Deref;
 
-/// A mutex that relies on parking the thread that locks it.
+/// A [`ParkMutex`] that uses std functions.
+#[cfg(feature = "std")]
+pub type ParkMutexStd<T> = ParkMutex<T, crate::StdThreadFunctions>;
+
+/// A [`RawParkMutex`] that uses std functions.
+#[cfg(feature = "std")]
+pub type RawParkMutexStd = RawParkMutex<crate::StdThreadFunctions>;
+
+/// A mutex that relies on parking the thread that locks it. Uses [`RawParkMutex`]
 pub type ParkMutex<T, CS> = CustomMutex<T, RawParkMutex<CS>>;
 
 /// The raw portion of [`ParkMutex`].
