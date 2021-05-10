@@ -1,4 +1,7 @@
-## concurrency_traits v0.5.0
+### concurrency_traits v0.5.0
+- Fixed overflow bug in `ParkQueue`
+
+## ~~concurrency_traits v0.5.0~~
 - Added ThreadTimeoutParker to StdThreadFunctions
 - Changed a lot of blanket impls
 - Added more custom mutexes and queues

@@ -111,7 +111,11 @@ where
         guard.parkers.push_back(Arc::downgrade(&self_swap));
         loop {
             drop(guard);
-            CS::park_timeout(end - CS::current_time());
+            let current_time = CS::current_time();
+            if current_time >= end {
+                return None;
+            }
+            CS::park_timeout(end - current_time);
             guard = self.inner.lock();
             if self_swap.1.load(Ordering::Acquire) {
                 if let Some(value) = guard.queue.pop_front() {
