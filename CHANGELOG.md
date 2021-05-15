@@ -1,5 +1,6 @@
 ### concurrency_traits v0.5.3
 - Fixed simple futures importing with std
+  - Added CI lint to check this
 
 ### ~~concurrency_traits v0.5.2~~
 - Added `FullAsyncMutex`

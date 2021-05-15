@@ -46,7 +46,7 @@ jobs:
           args: ${{ matrix.mode }} --no-default-features ${{ matrix.features }} -- -D warnings
 
   clippy-nightly:
-    name: Clippy
+    name: Clippy Nightly
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -85,7 +85,7 @@ jobs:
           args: ${{ matrix.mode }} --no-default-features ${{ matrix.nightly }} ${{ matrix.features }} -- -D warnings
 
   clippy-stable-target:
-    name: Clippy
+    name: Clippy Target
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -119,7 +119,7 @@ jobs:
           args: ${{ matrix.mode }} --target armv7a-none-eabi --no-default-features ${{ matrix.features }} -- -D warnings
 
   clippy-nightly-target:
-    name: Clippy
+    name: Clippy Nightly Target
     runs-on: ubuntu-latest
     strategy:
       matrix:
