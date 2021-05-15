@@ -1,7 +1,10 @@
-### concurrency_traits v0.5.2
+### concurrency_traits v0.5.3
+- Fixed simple futures importing with std
+
+### ~~concurrency_traits v0.5.2~~
 - Added `FullAsyncMutex`
 
-### concurrency_traits v0.5.1
+### ~~concurrency_traits v0.5.1~~
 - Fixed overflow bug in `ParkQueue`
 - Fixed overflow bug in `RawParkMutex`
 
