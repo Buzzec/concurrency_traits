@@ -6,6 +6,9 @@ mod async_mutex;
 #[cfg(feature = "alloc")]
 pub use async_mutex::*;
 
+mod atomic_mutex;
+pub use atomic_mutex::*;
+
 #[cfg(feature = "alloc")]
 mod mutex_alloc;
 

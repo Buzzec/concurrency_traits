@@ -1,3 +1,7 @@
+### concurrency_traits v0.5.4
+- Added `AtomicMutex`
+- Added `RawTimeoutMutex` to `RawSpinLock`
+
 ### concurrency_traits v0.5.3
 - Fixed simple futures importing with std
   - Added CI lint to check this
