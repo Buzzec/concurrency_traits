@@ -1,4 +1,4 @@
-use crate::rw_lock::{CustomRwLock, RawTryRwLock};
+use crate::rw_lock::{CustomRwLock, RawDowngradeRwLock, RawTryRwLock, RawTryUpgradeRwLock};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 /// A read-write lock that only supports try operations ([`TryRwLock`](crate::rw_lock::TryRwLock)).
@@ -75,6 +75,41 @@ unsafe impl RawTryRwLock for RawAtomicRwLock {
         #[cfg(not(debug_assertions))]
         {
             self.read_count.store(1, Ordering::Release);
+        }
+    }
+}
+unsafe impl RawTryUpgradeRwLock for RawAtomicRwLock {
+    unsafe fn try_upgrade(&self) -> bool {
+        let mut count = self.read_count.load(Ordering::Acquire);
+        loop {
+            #[cfg(debug_assertions)]
+            {
+                assert!(count >= 2);
+            }
+            if count != 2 {
+                return false;
+            }
+            match self.read_count.compare_exchange_weak(
+                count,
+                0,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => return true,
+                Err(new_count) => count = new_count,
+            }
+        }
+    }
+}
+unsafe impl RawDowngradeRwLock for RawAtomicRwLock {
+    unsafe fn downgrade(&self) {
+        #[cfg(debug_assertions)]
+        {
+            assert_eq!(self.read_count.swap(2, Ordering::AcqRel), 0);
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            self.read_count.store(2, Ordering::Release);
         }
     }
 }

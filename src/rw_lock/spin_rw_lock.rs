@@ -1,4 +1,7 @@
-use crate::rw_lock::{CustomRwLock, RawAtomicRwLock, RawRwLock, RawTimeoutRwLock, RawTryRwLock};
+use crate::rw_lock::{
+    CustomRwLock, RawAtomicRwLock, RawDowngradeRwLock, RawRwLock, RawTimeoutRwLock, RawTryRwLock,
+    RawTryUpgradeRwLock, RawUpgradeRwLock, RawUpgradeTimeoutRwLock,
+};
 use crate::{ThreadFunctions, TimeFunctions};
 use core::marker::PhantomData;
 use core::time::Duration;
@@ -57,6 +60,43 @@ where
         }
     }
 }
+unsafe impl<CS> RawTryUpgradeRwLock for RawSpinRwLock<CS> {
+    #[inline]
+    unsafe fn try_upgrade(&self) -> bool {
+        self.lock.try_upgrade()
+    }
+}
+unsafe impl<CS> RawUpgradeRwLock for RawSpinRwLock<CS>
+where
+    CS: ThreadFunctions,
+{
+    unsafe fn upgrade(&self) {
+        while !self.try_upgrade() {
+            CS::yield_now();
+        }
+    }
+}
+unsafe impl<CS> RawUpgradeTimeoutRwLock for RawSpinRwLock<CS>
+where
+    CS: ThreadFunctions + TimeFunctions,
+{
+    unsafe fn upgrade_timeout(&self, timeout: Duration) -> bool {
+        let end = CS::current_time() + timeout;
+        while end > CS::current_time() {
+            if self.try_upgrade() {
+                return true;
+            }
+            CS::yield_now();
+        }
+        false
+    }
+}
+unsafe impl<CS> RawDowngradeRwLock for RawSpinRwLock<CS> {
+    #[inline]
+    unsafe fn downgrade(&self) {
+        self.lock.downgrade()
+    }
+}
 unsafe impl<CS> RawTimeoutRwLock for RawSpinRwLock<CS>
 where
     CS: ThreadFunctions + TimeFunctions,
@@ -67,6 +107,7 @@ where
             if self.try_add_reader() {
                 return true;
             }
+            CS::yield_now();
         }
         false
     }
@@ -77,6 +118,7 @@ where
             if self.try_add_writer() {
                 return true;
             }
+            CS::yield_now();
         }
         false
     }

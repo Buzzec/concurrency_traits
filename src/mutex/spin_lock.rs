@@ -52,6 +52,7 @@ where
             if self.lock.try_lock() {
                 return true;
             }
+            CS::yield_now();
         }
         false
     }
