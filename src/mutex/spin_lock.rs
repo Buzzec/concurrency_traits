@@ -1,7 +1,7 @@
 use crate::mutex::{CustomMutex, RawAtomicMutex, RawMutex, RawTimeoutMutex, RawTryMutex};
 use crate::{ThreadFunctions, TimeFunctions};
 use core::marker::PhantomData;
-use std::time::Duration;
+use core::time::Duration;
 
 /// A [`SpinLock`] that uses std functions.
 #[cfg(feature = "std")]

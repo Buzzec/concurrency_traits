@@ -1,7 +1,7 @@
 use crate::rw_lock::{CustomRwLock, RawAtomicRwLock, RawRwLock, RawTimeoutRwLock, RawTryRwLock};
 use crate::{ThreadFunctions, TimeFunctions};
-use std::marker::PhantomData;
-use std::time::Duration;
+use core::marker::PhantomData;
+use core::time::Duration;
 
 /// A read-write lock that spins to wait. Should only be locked for short durations.
 pub type SpinRwLock<T, CS> = CustomRwLock<T, RawSpinRwLock<CS>>;
