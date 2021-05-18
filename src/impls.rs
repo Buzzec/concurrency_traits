@@ -857,6 +857,138 @@ where
 {
 }
 
+// UpgradeTimeoutRwLock
+macro_rules! impl_upgrade_timeout_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> UpgradeTimeoutRwLock<'__a> for $impl_type where
+            T: UpgradeTimeoutRwLock<'__a>,
+            <T as TryRwLock<'__a>>::ReadGuard: UpgradeTimeoutReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> UpgradeTimeoutRwLock<'__a> for $impl_type where
+            T: UpgradeTimeoutRwLock<'__a>,
+            <T as TryRwLock<'__a>>::ReadGuard: UpgradeTimeoutReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> UpgradeTimeoutRwLock<'__a> for $impl_type
+        where
+            T: UpgradeTimeoutRwLock<'__a> + Clone,
+            <T as TryRwLock<'__a>>::ReadGuard: UpgradeTimeoutReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    () =>{}
+}
+impl_upgrade_timeout_rw_lock_deref!(&'a T, 'a);
+impl_upgrade_timeout_rw_lock_deref!(&'a mut T, 'a);
+impl_upgrade_timeout_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_upgrade_timeout_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_timeout_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_timeout_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_timeout_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_upgrade_timeout_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> UpgradeTimeoutRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: UpgradeTimeoutRwLock<'a>,
+    <T::Target as TryRwLock<'a>>::ReadGuard: UpgradeTimeoutReadGuard<
+        'a,
+        Item = <T::Target as TryRwLock<'a>>::Item,
+        WriteGuard = <T::Target as TryRwLock<'a>>::WriteGuard,
+    >,
+{
+}
+
+// TryUpgradeRwLock
+macro_rules! impl_try_upgrade_rw_lock_deref {
+    ($impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T: ?Sized> TryUpgradeRwLock<'__a> for $impl_type where
+            T: TryUpgradeRwLock<'__a>,
+            <T as TryRwLock<'__a>>::ReadGuard: TryUpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    (Sized $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryUpgradeRwLock<'__a> for $impl_type where
+            T: TryUpgradeRwLock<'__a>,
+            <T as TryRwLock<'__a>>::ReadGuard: TryUpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    (Clone $impl_type:ty $(, $lifetime:lifetime)*) => {
+        impl<'__a, $($lifetime,)* T> TryUpgradeRwLock<'__a> for $impl_type
+        where
+            T: TryUpgradeRwLock<'__a> + Clone,
+            <T as TryRwLock<'__a>>::ReadGuard: TryUpgradeReadGuard<
+                '__a,
+                Item = T::Item,
+                WriteGuard = T::WriteGuard,
+            >,
+        {
+            impl_upgrade_rw_lock_deref!();
+        }
+    };
+    () =>{}
+}
+impl_try_upgrade_rw_lock_deref!(&'a T, 'a);
+impl_try_upgrade_rw_lock_deref!(&'a mut T, 'a);
+impl_try_upgrade_rw_lock_deref!(ManuallyDrop<T>);
+#[cfg(feature = "std")]
+impl_try_upgrade_rw_lock_deref!(Sized AssertUnwindSafe<T>);
+#[cfg(feature = "alloc")]
+impl_try_upgrade_rw_lock_deref!(Rc<T>);
+#[cfg(feature = "alloc")]
+impl_try_upgrade_rw_lock_deref!(Arc<T>);
+#[cfg(feature = "alloc")]
+impl_try_upgrade_rw_lock_deref!(Box<T>);
+#[cfg(feature = "alloc")]
+impl_try_upgrade_rw_lock_deref!(Clone Cow<'a, T>, 'a);
+impl<'a, T> TryUpgradeRwLock<'a> for Pin<T>
+where
+    T: Deref,
+    T::Target: TryUpgradeRwLock<'a>,
+    <T::Target as TryRwLock<'a>>::ReadGuard: TryUpgradeReadGuard<
+        'a,
+        Item = <T::Target as TryRwLock<'a>>::Item,
+        WriteGuard = <T::Target as TryRwLock<'a>>::WriteGuard,
+    >,
+{
+}
+
 // AsyncUpgradeRwLock
 macro_rules! impl_async_upgrade_rw_lock_deref {
     ($impl_type:ty $(, $lifetime:lifetime)*) => {

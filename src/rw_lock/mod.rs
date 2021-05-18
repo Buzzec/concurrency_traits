@@ -1,16 +1,19 @@
 //! Traits for RwLocks
 
+mod atomic_rw_lock;
+pub use atomic_rw_lock::*;
 #[cfg(feature = "alloc")]
 mod rw_lock_alloc;
-
-#[cfg(feature = "std")]
-mod rw_lock_std;
-
 #[cfg(feature = "alloc")]
 pub use rw_lock_alloc::*;
+#[cfg(feature = "std")]
+mod rw_lock_std;
+mod spin_rw_lock;
+pub use spin_rw_lock::*;
 
 use core::cell::UnsafeCell;
 use core::future::Future;
+use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::time::Duration;
 
@@ -118,10 +121,28 @@ pub trait AsyncRwLock<'a>: TryRwLock<'a> {
     fn write_async(&'a self) -> Self::WriteFuture;
 }
 
+/// An rwlock that has read guards that can try to be upgraded
+pub trait TryUpgradeRwLock<'a>: TryRwLock<'a>
+where
+    Self::ReadGuard: TryUpgradeReadGuard<'a, Item = Self::Item, WriteGuard = Self::WriteGuard>,
+{
+}
 /// An rwlock that has read guards that can be upgraded
-pub trait UpgradeRwLock<'a>: RwLock<'a>
+pub trait UpgradeRwLock<'a>: TryUpgradeRwLock<'a>
 where
     Self::ReadGuard: UpgradeReadGuard<'a, Item = Self::Item, WriteGuard = Self::WriteGuard>,
+{
+}
+/// An rwlock that has read guards that can be upgraded on a timeout.
+pub trait UpgradeTimeoutRwLock<'a>: TryUpgradeRwLock<'a>
+where
+    Self::ReadGuard: UpgradeTimeoutReadGuard<'a, Item = Self::Item, WriteGuard = Self::WriteGuard>,
+{
+}
+/// An rwlock that has write guards that can be downgraded.
+pub trait DowngradeRwLock<'a>: TryRwLock<'a>
+where
+    Self::WriteGuard: DowngradeWriteGuard<'a, Item = Self::Item, ReadGuard = Self::ReadGuard>,
 {
 }
 /// An async rwlock that has read guards that can be upgraded asynchronously
@@ -132,17 +153,36 @@ where
 {
 }
 
-/// A read guard that can be upgraded to a write guard
-pub trait UpgradeReadGuard<'a>: Sized {
+/// A read guard that can be try to be upgraded to a write guard
+pub trait TryUpgradeReadGuard<'a>: Sized + Deref<Target = Self::Item> {
     /// Item guarded by this guard
     type Item: ?Sized;
     /// The write guard that this is upgraded to
     type WriteGuard: DerefMut<Target = Self::Item>;
 
-    /// Upgrades this read guard into a write guard, blocking until done
-    fn upgrade(self) -> Self::WriteGuard;
     /// Tries to upgrade this guard, returning `Err` if cannot immediately
     fn try_upgrade(self) -> Result<Self::WriteGuard, Self>;
+}
+/// A read guard that can be upgraded to a write guard
+pub trait UpgradeReadGuard<'a>: TryUpgradeReadGuard<'a> {
+    /// Upgrades this read guard into a write guard, blocking until done
+    fn upgrade(self) -> Self::WriteGuard;
+}
+/// A read guard that can be upgraded to a write guard
+pub trait UpgradeTimeoutReadGuard<'a>: TryUpgradeReadGuard<'a> {
+    /// Upgrades this read guard into a write guard, blocking until done
+    fn upgrade_timeout(self, timeout: Duration) -> Result<Self::WriteGuard, Self>;
+}
+
+/// A write guard that can be downgraded.
+pub trait DowngradeWriteGuard<'a>: Sized + DerefMut<Target = Self::Item> {
+    /// Item guarded by this guard
+    type Item: ?Sized;
+    /// The write guard that this is upgraded to
+    type ReadGuard: Deref<Target = Self::Item>;
+
+    /// Downgrades this write guard into a read guard, blocking until done
+    fn downgrade(self) -> Self::ReadGuard;
 }
 
 /// A read guard that can be upgraded to a write guard asynchronously
@@ -247,6 +287,38 @@ pub unsafe trait RawRwLock: RawTryRwLock {
     fn add_reader(&self);
     /// Blocks until a writer is added to this lock
     fn add_writer(&self);
+}
+/// A raw rw lock which has guards that can try to be upgraded.
+pub unsafe trait RawTryUpgradeRwLock: RawTryRwLock {
+    /// Tries to upgrade a reader to a writer.
+    ///
+    /// # Safety
+    /// Caller must ensure that a reader exists
+    unsafe fn try_upgrade(&self) -> bool;
+}
+/// A raw rw lock which has guards that can be upgraded.
+pub unsafe trait RawUpgradeRwLock: RawTryUpgradeRwLock {
+    /// Blocks until lock is changed from read to write.
+    ///
+    /// # Safety
+    /// Caller must ensure that a reader exists.
+    unsafe fn upgrade(&self);
+}
+/// A raw rw lock which has guards that can be upgraded on a timeout.
+pub unsafe trait RawUpgradeTimeoutRwLock: RawTryUpgradeRwLock {
+    /// Blocks until lock is changed from read to write (true) or times out (false).
+    ///
+    /// # Safety
+    /// Caller must ensure that a reader exists.
+    unsafe fn upgrade_timeout(&self, timeout: Duration) -> bool;
+}
+/// A raw rw lock which has guards that can be downgraded.
+pub unsafe trait RawDowngradeRwLock: RawTryRwLock {
+    /// Changes lock from writing to 1 writer.
+    ///
+    /// # Safety
+    /// Caller must ensure that a writer exists.
+    unsafe fn downgrade(&self);
 }
 /// A raw timeout rw lock that stores no data
 pub unsafe trait RawTimeoutRwLock: RawRwLock {
@@ -390,7 +462,30 @@ where
         out
     }
 }
-
+impl<'a, T, R> TryUpgradeRwLock<'a> for CustomRwLock<T, R>
+where
+    T: 'a,
+    R: RawTryUpgradeRwLock + 'a,
+{
+}
+impl<'a, T, R> UpgradeRwLock<'a> for CustomRwLock<T, R>
+where
+    T: 'a,
+    R: RawUpgradeRwLock + 'a,
+{
+}
+impl<'a, T, R> UpgradeTimeoutRwLock<'a> for CustomRwLock<T, R>
+where
+    T: 'a,
+    R: RawUpgradeTimeoutRwLock + 'a,
+{
+}
+impl<'a, T, R> DowngradeRwLock<'a> for CustomRwLock<T, R>
+where
+    T: 'a,
+    R: RawDowngradeRwLock + 'a,
+{
+}
 impl<'a, T, R> TimeoutRwLock<'a> for CustomRwLock<T, R>
 where
     T: 'a,
@@ -472,6 +567,53 @@ where
         unsafe { self.lock.raw_lock.remove_reader() }
     }
 }
+impl<'a, T, R> TryUpgradeReadGuard<'a> for CustomReadGuard<'a, T, R>
+where
+    R: RawTryUpgradeRwLock,
+{
+    type Item = T;
+    type WriteGuard = CustomWriteGuard<'a, T, R>;
+
+    fn try_upgrade(self) -> Result<Self::WriteGuard, Self> {
+        match unsafe { self.lock.raw_lock.try_upgrade() } {
+            true => {
+                let self_manual = ManuallyDrop::new(self);
+                Ok(CustomWriteGuard {
+                    lock: self_manual.lock,
+                })
+            }
+            false => Err(self),
+        }
+    }
+}
+impl<'a, T, R> UpgradeReadGuard<'a> for CustomReadGuard<'a, T, R>
+where
+    R: RawUpgradeRwLock,
+{
+    fn upgrade(self) -> Self::WriteGuard {
+        unsafe { self.lock.raw_lock.upgrade() }
+        let self_manual = ManuallyDrop::new(self);
+        CustomWriteGuard {
+            lock: self_manual.lock,
+        }
+    }
+}
+impl<'a, T, R> UpgradeTimeoutReadGuard<'a> for CustomReadGuard<'a, T, R>
+where
+    R: RawUpgradeTimeoutRwLock,
+{
+    fn upgrade_timeout(self, timeout: Duration) -> Result<Self::WriteGuard, Self> {
+        match unsafe { self.lock.raw_lock.upgrade_timeout(timeout) } {
+            true => {
+                let self_manual = ManuallyDrop::new(self);
+                Ok(CustomWriteGuard {
+                    lock: self_manual.lock,
+                })
+            }
+            false => Err(self),
+        }
+    }
+}
 
 /// The write guard for [`CustomRwLock`]
 #[derive(Debug)]
@@ -505,5 +647,20 @@ where
 {
     fn drop(&mut self) {
         unsafe { self.lock.raw_lock.remove_writer() }
+    }
+}
+impl<'a, T, R> DowngradeWriteGuard<'a> for CustomWriteGuard<'a, T, R>
+where
+    R: RawDowngradeRwLock,
+{
+    type Item = T;
+    type ReadGuard = CustomReadGuard<'a, T, R>;
+
+    fn downgrade(self) -> Self::ReadGuard {
+        unsafe { self.lock.raw_lock.downgrade() }
+        let self_manual = ManuallyDrop::new(self);
+        CustomReadGuard {
+            lock: self_manual.lock,
+        }
     }
 }

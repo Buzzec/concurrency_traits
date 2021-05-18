@@ -1,3 +1,11 @@
+## concurrency_traits v0.6.0
+- Added `AtomicMutex`
+- Added `RawTimeoutMutex` to `RawSpinLock`
+- Added `AtomicRwLock`
+- Added `SpinRwLock`
+- Added `TryUpgradeRwLock`, `UpgradeTimeoutRwLock`, `DowngradeRwLock`, and related raws
+  - Implemented for multiple types
+
 ### concurrency_traits v0.5.3
 - Fixed simple futures importing with std
   - Added CI lint to check this

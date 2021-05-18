@@ -1,7 +1,7 @@
-use crate::mutex::{CustomMutex, RawTryMutex, RawAsyncMutex};
-use core::sync::atomic::{AtomicBool, Ordering};
+use crate::mutex::{CustomMutex, RawAsyncMutex, RawTryMutex};
 use crate::queue::TryQueue;
-use simple_futures::complete_future::{CompleteFutureHandle, CompleteFuture};
+use core::sync::atomic::{AtomicBool, Ordering};
+use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 /// A mutex that can only be accessed through async await or try operations.
 /// ```
 /// # #[cfg(feature = "std")]
@@ -65,18 +65,20 @@ where
     }
 
     unsafe fn unlock(&self) {
-        loop{
+        loop {
             if let Some(handle) = self.waiting_queue.try_pop() {
                 let result = handle.complete();
-                if result.is_some(){
+                if result.is_some() {
                     debug_assert!(!result.unwrap());
                     return;
                 }
             } else {
-                #[cfg(debug_assertions)]{
+                #[cfg(debug_assertions)]
+                {
                     assert!(self.locked.swap(false, Ordering::AcqRel));
                 }
-                #[cfg(not(debug_assertions))]{
+                #[cfg(not(debug_assertions))]
+                {
                     self.locked.store(false, Ordering::Release);
                 }
                 return;

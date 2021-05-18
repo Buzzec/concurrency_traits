@@ -1,7 +1,7 @@
-use crate::mutex::{CustomMutex, RawMutex, RawTryMutex};
-use crate::ThreadFunctions;
+use crate::mutex::{CustomMutex, RawAtomicMutex, RawMutex, RawTimeoutMutex, RawTryMutex};
+use crate::{ThreadFunctions, TimeFunctions};
 use core::marker::PhantomData;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::time::Duration;
 
 /// A [`SpinLock`] that uses std functions.
 #[cfg(feature = "std")]
@@ -12,31 +12,24 @@ pub type SpinLock<T, CS> = CustomMutex<T, RawSpinLock<CS>>;
 /// The raw portion of [`SpinLock`].
 #[derive(Debug)]
 pub struct RawSpinLock<CS> {
-    locked: AtomicBool,
+    lock: RawAtomicMutex,
     phantom_cs: PhantomData<fn() -> CS>,
 }
 impl<CS> Default for RawSpinLock<CS> {
     fn default() -> Self {
         Self {
-            locked: AtomicBool::new(false),
+            lock: RawAtomicMutex::default(),
             phantom_cs: Default::default(),
         }
     }
 }
 unsafe impl<CS> RawTryMutex for RawSpinLock<CS> {
     fn try_lock(&self) -> bool {
-        !self.locked.swap(true, Ordering::AcqRel)
+        self.lock.try_lock()
     }
 
     unsafe fn unlock(&self) {
-        #[cfg(debug_assertions)]
-        {
-            assert!(self.locked.swap(false, Ordering::AcqRel));
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            self.locked.store(false, Ordering::Release);
-        }
+        self.lock.unlock()
     }
 }
 unsafe impl<CS> RawMutex for RawSpinLock<CS>
@@ -44,12 +37,23 @@ where
     CS: ThreadFunctions,
 {
     fn lock(&self) {
-        while self
-            .locked
-            .compare_exchange_weak(false, true, Ordering::AcqRel, Ordering::Relaxed)
-            .is_err()
-        {
+        while !self.lock.try_lock() {
             CS::yield_now()
         }
+    }
+}
+unsafe impl<CS> RawTimeoutMutex for RawSpinLock<CS>
+where
+    CS: ThreadFunctions + TimeFunctions,
+{
+    fn lock_timeout(&self, timeout: Duration) -> bool {
+        let end = CS::current_time() + timeout;
+        while end > CS::current_time() {
+            if self.lock.try_lock() {
+                return true;
+            }
+            CS::yield_now();
+        }
+        false
     }
 }
