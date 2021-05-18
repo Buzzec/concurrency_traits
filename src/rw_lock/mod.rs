@@ -2,14 +2,14 @@
 
 mod atomic_rw_lock;
 pub use atomic_rw_lock::*;
-
 #[cfg(feature = "alloc")]
 mod rw_lock_alloc;
-#[cfg(feature = "std")]
-mod rw_lock_std;
-
 #[cfg(feature = "alloc")]
 pub use rw_lock_alloc::*;
+#[cfg(feature = "std")]
+mod rw_lock_std;
+mod spin_rw_lock;
+pub use spin_rw_lock::*;
 
 use core::cell::UnsafeCell;
 use core::future::Future;

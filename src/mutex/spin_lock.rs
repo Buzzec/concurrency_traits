@@ -1,4 +1,4 @@
-use crate::mutex::{CustomMutex, RawMutex, RawTryMutex, RawAtomicMutex, RawTimeoutMutex};
+use crate::mutex::{CustomMutex, RawAtomicMutex, RawMutex, RawTimeoutMutex, RawTryMutex};
 use crate::{ThreadFunctions, TimeFunctions};
 use core::marker::PhantomData;
 use std::time::Duration;
@@ -37,16 +37,19 @@ where
     CS: ThreadFunctions,
 {
     fn lock(&self) {
-        while !self.lock.try_lock(){
+        while !self.lock.try_lock() {
             CS::yield_now()
         }
     }
 }
-unsafe impl<CS> RawTimeoutMutex for RawSpinLock<CS> where CS: ThreadFunctions + TimeFunctions{
+unsafe impl<CS> RawTimeoutMutex for RawSpinLock<CS>
+where
+    CS: ThreadFunctions + TimeFunctions,
+{
     fn lock_timeout(&self, timeout: Duration) -> bool {
         let end = CS::current_time() + timeout;
-        while end > CS::current_time(){
-            if self.lock.try_lock(){
+        while end > CS::current_time() {
+            if self.lock.try_lock() {
                 return true;
             }
         }

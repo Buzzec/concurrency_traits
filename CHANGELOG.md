@@ -2,6 +2,7 @@
 - Added `AtomicMutex`
 - Added `RawTimeoutMutex` to `RawSpinLock`
 - Added `AtomicRwLock`
+- Added `SpinRwLock`
 
 ### concurrency_traits v0.5.3
 - Fixed simple futures importing with std
