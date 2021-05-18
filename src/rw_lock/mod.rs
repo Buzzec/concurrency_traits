@@ -1,8 +1,10 @@
 //! Traits for RwLocks
 
+mod atomic_rw_lock;
+pub use atomic_rw_lock::*;
+
 #[cfg(feature = "alloc")]
 mod rw_lock_alloc;
-
 #[cfg(feature = "std")]
 mod rw_lock_std;
 

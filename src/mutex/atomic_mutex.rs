@@ -2,8 +2,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::mutex::{CustomMutex, RawTryMutex};
 use crate::{EnsureSend, EnsureSync};
 
+/// A mutex based on an [`AtomicBool`]. Only supports try operations ([`TryMutex`](crate::mutex::TryMutex)).
 pub type AtomicMutex<T> = CustomMutex<T, RawAtomicMutex>;
 
+/// The raw portion of [`AtomicMutex`].
+#[derive(Debug)]
 pub struct RawAtomicMutex {
     locked: AtomicBool,
 }
