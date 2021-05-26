@@ -6,6 +6,8 @@ use alloc::sync::{Arc, Weak};
 use async_trait::async_trait;
 use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 
+pub type CustomAsyncMutex<T, M, Q> = CustomMutex<T, RawCustomAsyncMutex<M, Q>>;
+
 /// A converter for turning a [`RawMutex`] into a [`RawAsyncMutex`]. Runs all
 /// operations on own task.
 #[derive(Debug)]

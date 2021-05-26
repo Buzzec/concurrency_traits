@@ -18,9 +18,9 @@ mod custom_mutex;
 pub use custom_mutex::*;
 
 #[cfg(feature = "alloc")]
-mod mutex_alloc;
+mod custom_async_mutex;
 #[cfg(feature = "alloc")]
-pub use mutex_alloc::*;
+pub use custom_async_mutex::*;
 
 mod timeout_mutex;
 pub use timeout_mutex::*;
