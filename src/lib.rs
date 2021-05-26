@@ -12,10 +12,6 @@ pub mod queue;
 pub mod rw_lock;
 pub mod stack;
 
-#[cfg(feature = "alloc")]
-mod alloc_impls;
-mod impls;
-
 use core::convert::Infallible;
 use core::fmt::Debug;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
