@@ -1,6 +1,6 @@
-use crate::queue::{TryPrependQueue, TryReverseQueue, ReverseQueue, PrependQueue};
 #[cfg(feature = "alloc")]
 use crate::queue::{AsyncPrependQueue, AsyncReverseQueue};
+use crate::queue::{PrependQueue, ReverseQueue, TryPrependQueue, TryReverseQueue};
 /// A queue that can try to be written and read from both ends
 pub trait TryDoubleEndedQueue: TryPrependQueue + TryReverseQueue {}
 /// A queue that can be written and read from both ends

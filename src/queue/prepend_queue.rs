@@ -1,10 +1,10 @@
 #[cfg(feature = "alloc")]
-use async_trait::async_trait;
+use crate::queue::AsyncQueue;
+use crate::queue::{Queue, TryQueue};
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 #[cfg(feature = "alloc")]
-use crate::queue::AsyncQueue;
-use crate::queue::{Queue, TryQueue};
+use async_trait::async_trait;
 
 /// A queue that can be attempt to be prepended to
 pub trait TryPrependQueue: TryQueue {

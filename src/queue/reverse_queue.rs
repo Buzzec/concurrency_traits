@@ -1,10 +1,10 @@
-use crate::queue::{TryQueue, Queue, TryPeekQueue, PeekQueue};
 #[cfg(feature = "alloc")]
-use crate::queue::{AsyncQueue, AsyncPeekQueue};
-#[cfg(feature = "alloc")]
-use async_trait::async_trait;
+use crate::queue::{AsyncPeekQueue, AsyncQueue};
+use crate::queue::{PeekQueue, Queue, TryPeekQueue, TryQueue};
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
+#[cfg(feature = "alloc")]
+use async_trait::async_trait;
 
 /// A queue that can try to be read in reverse.
 pub trait TryReverseQueue: TryQueue {
@@ -19,7 +19,7 @@ pub trait ReverseQueue: TryReverseQueue + Queue {
 /// An asynchronous queue that can be read in reverse
 #[cfg(feature = "alloc")]
 #[async_trait]
-pub trait AsyncReverseQueue: AsyncQueue{
+pub trait AsyncReverseQueue: AsyncQueue {
     /// Reads the back of the queue
     async fn pop_back_async(&self) -> Self::Item;
 }

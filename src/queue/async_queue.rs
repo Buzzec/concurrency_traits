@@ -1,6 +1,6 @@
-use async_trait::async_trait;
-use alloc::boxed::Box;
 use crate::queue::TryQueue;
+use alloc::boxed::Box;
+use async_trait::async_trait;
 
 /// A Queue that can be accessed asynchronously
 #[async_trait]
