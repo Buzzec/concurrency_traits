@@ -54,10 +54,6 @@ where
     fn try_pop(&self) -> Option<Self::Item> {
         self.inner.lock().queue.pop_front()
     }
-
-    fn clear(&self) {
-        self.inner.lock().queue.clear();
-    }
 }
 impl<T, CS> Queue for ParkQueue<T, CS>
 where

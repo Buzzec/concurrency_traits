@@ -1,5 +1,4 @@
-//! Generic mutex that only needs lock and unlock functionality to be auto
-//! implemented.
+//! Generic Mutex traits and implementations.
 
 mod impls;
 pub use impls::*;
