@@ -1,6 +1,6 @@
-use crate::mutex::{TryMutex, RawTryMutex, CustomMutex, CustomMutexGuard};
-use async_trait::async_trait;
+use crate::mutex::{CustomMutex, CustomMutexGuard, RawTryMutex, TryMutex};
 use alloc::boxed::Box;
+use async_trait::async_trait;
 
 /// A raw async mutex that hold no data but the lock itself.
 #[async_trait]

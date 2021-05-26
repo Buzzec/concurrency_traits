@@ -1,7 +1,7 @@
-use core::cell::UnsafeCell;
-use crate::{EnsureSend, EnsureSync};
-use core::ops::{Deref, DerefMut};
 use crate::mutex::RawTryMutex;
+use crate::{EnsureSend, EnsureSync};
+use core::cell::UnsafeCell;
+use core::ops::{Deref, DerefMut};
 
 /// A Mutex based on a given [`RawTryMutex`]
 #[derive(Debug)]

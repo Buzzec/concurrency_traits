@@ -1,6 +1,6 @@
-use core::time::Duration;
-use crate::mutex::{TryMutexSized, TryMutex, RawMutex, CustomMutex, CustomMutexGuard};
+use crate::mutex::{CustomMutex, CustomMutexGuard, RawMutex, TryMutex, TryMutexSized};
 use core::ops::DerefMut;
+use core::time::Duration;
 
 /// A raw mutex that can be timed out and holds no data.
 pub unsafe trait RawTimeoutMutex: RawMutex {

@@ -3,8 +3,8 @@ use crate::queue::Queue;
 use crate::TryThreadSpawner;
 use alloc::boxed::Box;
 use alloc::sync::{Arc, Weak};
-use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 use async_trait::async_trait;
+use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 
 /// A converter for turning a [`RawMutex`] into a [`RawAsyncMutex`]. Runs all
 /// operations on own task.

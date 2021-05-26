@@ -1,7 +1,7 @@
-use crate::mutex::{RawAsyncMutex, AsyncMutex, CustomMutex, CustomMutexGuard};
-use core::time::Duration;
-use async_trait::async_trait;
+use crate::mutex::{AsyncMutex, CustomMutex, CustomMutexGuard, RawAsyncMutex};
 use alloc::boxed::Box;
+use async_trait::async_trait;
+use core::time::Duration;
 
 /// A raw async mutex that can be timed out and holds no data.
 #[async_trait]

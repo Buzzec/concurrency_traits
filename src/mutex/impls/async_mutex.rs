@@ -1,9 +1,9 @@
 use crate::mutex::{CustomMutex, RawAsyncMutex, RawTryMutex};
 use crate::queue::TryQueue;
+use alloc::boxed::Box;
+use async_trait::async_trait;
 use core::sync::atomic::{AtomicBool, Ordering};
 use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
-use async_trait::async_trait;
-use alloc::boxed::Box;
 
 /// A mutex that can only be accessed through async await or try operations.
 /// ```

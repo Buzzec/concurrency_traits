@@ -1,5 +1,5 @@
-use core::ops::DerefMut;
 use crate::mutex::{CustomMutex, CustomMutexGuard};
+use core::ops::DerefMut;
 
 /// A raw mutex that can be tried and holds no data.
 pub unsafe trait RawTryMutex {
