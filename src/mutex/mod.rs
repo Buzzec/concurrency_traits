@@ -4,28 +4,28 @@ mod impls;
 pub use impls::*;
 
 #[cfg(feature = "alloc")]
-mod async_mutex;
+mod r#async;
 #[cfg(feature = "alloc")]
-pub use async_mutex::*;
+pub use r#async::*;
 
 #[cfg(feature = "alloc")]
-mod async_timeout_mutex;
+mod async_timeout;
 #[cfg(feature = "alloc")]
-pub use async_mutex::*;
+pub use async_timeout::*;
 
-mod custom_mutex;
-pub use custom_mutex::*;
+mod custom;
+pub use custom::*;
 
 #[cfg(feature = "alloc")]
-mod custom_async_mutex;
+mod custom_async;
 #[cfg(feature = "alloc")]
-pub use custom_async_mutex::*;
+pub use custom_async::*;
 
-mod timeout_mutex;
-pub use timeout_mutex::*;
+mod timeout;
+pub use timeout::*;
 
-mod try_mutex;
-pub use try_mutex::*;
+mod r#try;
+pub use r#try::*;
 
 use core::ops::DerefMut;
 

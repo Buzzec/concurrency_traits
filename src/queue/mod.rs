@@ -4,32 +4,32 @@ mod impls;
 pub use impls::*;
 
 #[cfg(feature = "alloc")]
-mod async_queue;
+mod r#async;
 #[cfg(feature = "alloc")]
-pub use async_queue::*;
+pub use r#async::*;
 
 #[cfg(feature = "alloc")]
-mod async_timeout_queue;
+mod async_timeout;
 #[cfg(feature = "alloc")]
-pub use async_timeout_queue::*;
+pub use async_timeout::*;
 
-mod double_ended_queue;
-pub use double_ended_queue::*;
+mod double_ended;
+pub use double_ended::*;
 
-mod peek_queue;
-pub use peek_queue::*;
+mod peek;
+pub use peek::*;
 
-mod prepend_queue;
-pub use prepend_queue::*;
+mod prepend;
+pub use prepend::*;
 
-mod reverse_queue;
-pub use reverse_queue::*;
+mod reverse;
+pub use reverse::*;
 
-mod timeout_queue;
-pub use timeout_queue::*;
+mod timeout;
+pub use timeout::*;
 
-mod try_queue;
-pub use try_queue::*;
+mod r#try;
+pub use r#try::*;
 
 /// A generic queue that can push and pop in FIFO order
 pub trait Queue: TryQueue {

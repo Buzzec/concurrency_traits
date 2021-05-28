@@ -11,10 +11,6 @@ impl<T> TryQueue for ArrayQueue<T> {
     fn try_pop(&self) -> Option<Self::Item> {
         self.pop()
     }
-
-    fn clear(&self) {
-        while self.pop().is_some() {}
-    }
 }
 impl<T> TryQueue for SegQueue<T> {
     type Item = T;
@@ -26,9 +22,5 @@ impl<T> TryQueue for SegQueue<T> {
 
     fn try_pop(&self) -> Option<Self::Item> {
         self.pop()
-    }
-
-    fn clear(&self) {
-        while self.pop().is_some() {}
     }
 }
