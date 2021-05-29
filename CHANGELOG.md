@@ -1,3 +1,8 @@
+## concurrency_traits v0.7.0
+- Major refactoring of file layout
+- Used `async_trait` for async versions
+- Removed blanket implementations
+
 ## concurrency_traits v0.6.0
 - Added `AtomicMutex`
 - Added `RawTimeoutMutex` to `RawSpinLock`

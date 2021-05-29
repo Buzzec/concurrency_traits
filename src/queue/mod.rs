@@ -51,7 +51,7 @@ pub(super) mod test {
         assert!(queue.try_push(100).is_ok());
         assert_eq!(queue.try_pop(), Some(100));
         assert!(queue.try_push(200).is_ok());
-        queue.clear();
+        assert_eq!(queue.try_pop(), Some(200));
         assert!(queue.try_pop().is_none());
     }
 
@@ -63,7 +63,7 @@ pub(super) mod test {
         queue.push(100);
         assert_eq!(queue.pop(), 100);
         queue.push(200);
-        queue.clear();
+        assert_eq!(queue.pop(), 200);
         assert!(queue.try_pop().is_none());
     }
 }
