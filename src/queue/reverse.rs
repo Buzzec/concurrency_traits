@@ -19,7 +19,7 @@ pub trait ReverseQueue: TryReverseQueue + Queue {
 /// An asynchronous queue that can be read in reverse
 #[cfg(feature = "alloc")]
 #[async_trait]
-pub trait AsyncReverseQueue: AsyncQueue {
+pub trait AsyncReverseQueue: TryReverseQueue + AsyncQueue {
     /// Reads the back of the queue
     async fn pop_back_async(&self) -> Self::Item;
 }
