@@ -6,6 +6,7 @@ use alloc::boxed::Box;
 use alloc::collections::VecDeque;
 use async_trait::async_trait;
 use core::time::Duration;
+use num::Zero;
 
 /// A queue based on a semaphore to block on.
 #[derive(Debug)]
@@ -20,6 +21,11 @@ where
     /// Gets the length of the queue.
     pub fn len(&self) -> S::Count {
         self.semaphore.count()
+    }
+
+    /// Tells whether the queue is empty.
+    pub fn is_empty(&self) -> bool where S::Count: Zero{
+        self.semaphore.count().is_zero()
     }
 }
 impl<T, S, CS> Default for SemaphoreQueue<T, S, CS>

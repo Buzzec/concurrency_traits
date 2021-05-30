@@ -1,7 +1,7 @@
 #[cfg(feature = "alloc")]
-mod full_async_queue;
+mod semaphore_queue;
 #[cfg(feature = "alloc")]
-pub use full_async_queue::*;
+pub use semaphore_queue::*;
 
 #[cfg(feature = "alloc")]
 mod park_queue;
