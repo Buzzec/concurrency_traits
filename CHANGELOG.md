@@ -1,3 +1,6 @@
+### concurrency_traits v0.7.2
+- Fixed queue bug
+
 ### concurrency_traits v0.7.1
 - Added semaphores
 - Added `FullAsyncQueue`

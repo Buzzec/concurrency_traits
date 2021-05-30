@@ -92,7 +92,7 @@ where
 
     async fn pop_async(&self) -> Self::Item {
         self.semaphore.wait_async().await;
-        self.queue.lock().pop_back().unwrap()
+        self.queue.lock().pop_front().unwrap()
     }
 }
 
