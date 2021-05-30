@@ -24,7 +24,10 @@ where
     }
 
     /// Tells whether the queue is empty.
-    pub fn is_empty(&self) -> bool where S::Count: Zero{
+    pub fn is_empty(&self) -> bool
+    where
+        S::Count: Zero,
+    {
         self.semaphore.count().is_zero()
     }
 }
