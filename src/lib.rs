@@ -10,6 +10,7 @@ extern crate alloc;
 pub mod mutex;
 pub mod queue;
 pub mod rw_lock;
+pub mod semaphore;
 pub mod stack;
 
 use core::convert::Infallible;

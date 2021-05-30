@@ -1,3 +1,8 @@
+### concurrency_traits v0.7.1
+- Added semaphores
+- Added `FullAsyncQueue`
+  - Adjusted a few erroneous queue trait dependencies related
+
 ## concurrency_traits v0.7.0
 - Major refactoring of file layout
 - Used `async_trait` for async versions

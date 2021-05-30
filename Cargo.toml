@@ -21,6 +21,7 @@ parking_lot = { version = "0.11.1", optional = true }
 crossbeam = { version = "0.8.0", optional = true, default-features = false }
 atomic_swapping = { version = "0.1.0", default-features = false }
 async-trait = { version = "0.1.50" }
+num = { version = "0.4.0", default-features = false }
 
 [dev-dependencies]
 rand = "0.8.3"

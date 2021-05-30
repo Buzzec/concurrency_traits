@@ -19,7 +19,7 @@ pub trait PrependQueue: Queue + TryPrependQueue {
 /// An async queue that can be prepended (items placed in front)
 #[cfg(feature = "alloc")]
 #[async_trait]
-pub trait AsyncPrependQueue: AsyncQueue {
+pub trait AsyncPrependQueue: TryPrependQueue + AsyncQueue {
     /// Adds to the front of the queue asynchronously
     async fn push_front_async(&self, value: Self::Item);
 }
