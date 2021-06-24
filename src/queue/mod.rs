@@ -16,6 +16,9 @@ pub use async_timeout::*;
 mod double_ended;
 pub use double_ended::*;
 
+mod length_queue;
+pub use length_queue::*;
+
 mod peek;
 pub use peek::*;
 

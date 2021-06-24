@@ -10,13 +10,15 @@ use core::time::Duration;
 /// Raw version of [`AsyncTimeoutUpgradeRwLock`].
 #[async_trait]
 pub unsafe trait RawAsyncTimeoutUpgradeRwLock: RawTryUpgradeRwLock {
-    /// Upgrades a reader to a writer asynchronously with a timeout. Returns [`true`] on success.
+    /// Upgrades a reader to a writer asynchronously with a timeout. Returns
+    /// [`true`] on success.
     ///
     /// # Safey
     /// Caller must ensure a reader exists.
     async unsafe fn upgrade_timeout_async(&self, timeout: Duration) -> bool;
 }
-/// An async rwlock that has read guards that can be upgraded asynchronously with a timeout.
+/// An async rwlock that has read guards that can be upgraded asynchronously
+/// with a timeout.
 pub trait AsyncTimeoutUpgradeRwLock<'a>: TryUpgradeRwLock<'a>
 where
     Self::ReadGuard:
@@ -24,7 +26,8 @@ where
 {
 }
 
-/// A read guard that can be upgraded to a write guard asynchronously with a timeout.
+/// A read guard that can be upgraded to a write guard asynchronously with a
+/// timeout.
 #[cfg(feature = "alloc")]
 #[async_trait]
 pub trait AsyncTimoutUpgradeReadGuard<'a>: Sized + TryUpgradeReadGuard<'a> {

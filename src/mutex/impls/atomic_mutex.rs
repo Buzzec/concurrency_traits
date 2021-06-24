@@ -2,7 +2,8 @@ use crate::mutex::{CustomMutex, RawTryMutex};
 use crate::{EnsureSend, EnsureSync};
 use core::sync::atomic::{AtomicBool, Ordering};
 
-/// A mutex based on an [`AtomicBool`]. Only supports try operations ([`TryMutex`](crate::mutex::TryMutex)).
+/// A mutex based on an [`AtomicBool`]. Only supports try operations
+/// ([`TryMutex`](crate::mutex::TryMutex)).
 pub type AtomicMutex<T> = CustomMutex<T, RawAtomicMutex>;
 
 /// The raw portion of [`AtomicMutex`].

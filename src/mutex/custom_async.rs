@@ -108,13 +108,13 @@ struct RawCustomAsyncMutexInner<M, Q> {
 pub enum RawCustomAsyncMutexMessage {
     /// A lock operation
     Lock(CompleteFutureHandle),
-    // /// Not currently used but reserved for future designs
-    // LockTimeout {
-    //     /// The future the timeout is for
-    //     future: ValueFutureHandle<bool>,
-    //     /// When the timeout was called
-    //     start: Instant,
-    //     /// How long the timeout is for
-    //     timeout: Duration,
-    // },
+    /* /// Not currently used but reserved for future designs
+     * LockTimeout {
+     *     /// The future the timeout is for
+     *     future: ValueFutureHandle<bool>,
+     *     /// When the timeout was called
+     *     start: Instant,
+     *     /// How long the timeout is for
+     *     timeout: Duration,
+     * }, */
 }

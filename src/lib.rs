@@ -22,47 +22,62 @@ trait EnsureSend: Send {}
 trait EnsureSync: Sync {}
 
 /// Functions to interact with system time.
-pub trait TimeFunctions {
-    /// The type of an instant for this system. Analog for [`std::time::Instant`].
+pub trait TimeFunctions: Debug {
+    /// The type of an instant for this system. Analog for
+    /// [`std::time::Instant`].
     type InstantType: Add<Duration, Output = Self::InstantType>
         + AddAssign<Duration>
         + Sub<Duration, Output = Self::InstantType>
         + SubAssign<Duration>
         + Sub<Self::InstantType, Output = Duration>
         + Ord
-        + Copy;
+        + Copy
+        + Debug;
 
     /// Get the current instant. Analog for [`std::time::Instant::now`].
     fn current_time() -> Self::InstantType;
 }
-/// Functions to allow the current thread to interact in ways a thread might need to.
-pub trait ThreadFunctions {
-    /// Sleeps the current thread for a specified duration. Analog for [`std::thread::sleep`].
+/// Functions to allow the current thread to interact in ways a thread might
+/// need to.
+pub trait ThreadFunctions: Debug {
+    /// Sleeps the current thread for a specified duration. Analog for
+    /// [`std::thread::sleep`].
     fn sleep(duration: Duration);
-    /// Yields the current thread to the OS. Analog for [`std::thread::yield_now`].
+    /// Yields the current thread to the OS. Analog for
+    /// [`std::thread::yield_now`].
     fn yield_now();
 }
-/// Functions to spawn new threads. If infallibility is required look to [`ThreadSpawner`]. If a result is needed from the launched thread look to [`TryResultThreadSpawner`] or [`ResultThreadSpawner`]. `O` is the result of the thread function.
-pub trait TryThreadSpawner<O>
+/// Functions to spawn new threads. If infallibility is required look to
+/// [`ThreadSpawner`]. If a result is needed from the launched thread look to
+/// [`TryResultThreadSpawner`] or [`ResultThreadSpawner`]. `O` is the result of
+/// the thread function.
+pub trait TryThreadSpawner<O>: Debug
 where
     O: Send + 'static,
 {
-    /// The handle that is returned from spawning. Analog to [`std::thread::JoinHandle`].
+    /// The handle that is returned from spawning. Analog to
+    /// [`std::thread::JoinHandle`].
     type ThreadHandle: ThreadHandle;
     /// The error that can occur from starting the thread.
     type SpawnError;
 
-    /// Attempts to spawn a thread returning a result of [`Self::ThreadHandle`] and [`Self::SpawnError`].
+    /// Attempts to spawn a thread returning a result of [`Self::ThreadHandle`]
+    /// and [`Self::SpawnError`].
     fn try_spawn(
         func: impl FnOnce() -> O + 'static + Send,
     ) -> Result<Self::ThreadHandle, Self::SpawnError>;
 }
-/// Same as a [`TryThreadSpawner`] with an [`Infallible`] [`TryThreadSpawner::SpawnError`]. This is auto-implemented with [`TryThreadSpawner`] when possible. If a result is needed from the launched thread look to [`ResultThreadSpawner`].
+/// Same as a [`TryThreadSpawner`] with an [`Infallible`]
+/// [`TryThreadSpawner::SpawnError`]. This is auto-implemented with
+/// [`TryThreadSpawner`] when possible. If a result is needed from the launched
+/// thread look to [`ResultThreadSpawner`].
 pub trait ThreadSpawner<O>: TryThreadSpawner<O, SpawnError = Infallible>
 where
     O: Send + 'static,
 {
-    /// Spawns a thread returning a [`TryThreadSpawner::ThreadHandle`]. Analog to [`std::thread::spawn`]. Will be faster on nightly due to [`Result::unwrap_unchecked`].
+    /// Spawns a thread returning a [`TryThreadSpawner::ThreadHandle`]. Analog
+    /// to [`std::thread::spawn`]. Will be faster on nightly due to
+    /// [`Result::unwrap_unchecked`].
     fn spawn(func: impl FnOnce() -> O + 'static + Send) -> Self::ThreadHandle {
         #[cfg(not(feature = "nightly"))]
         {
@@ -80,7 +95,8 @@ where
     O: Send + 'static,
 {
 }
-/// Named version of [`TryThreadSpawner`] where the handle is a [`TryJoinableHandle`]. Auto implemented.
+/// Named version of [`TryThreadSpawner`] where the handle is a
+/// [`TryJoinableHandle`]. Auto implemented.
 pub trait TryResultThreadSpawner<O>: TryThreadSpawner<O>
 where
     Self::ThreadHandle: TryJoinableHandle<Output = O>,
@@ -94,7 +110,8 @@ where
     O: Send + 'static,
 {
 }
-/// Named version of [`ThreadSpawner`] where the handle is a [`TryJoinableHandle`]. Auto implemented.
+/// Named version of [`ThreadSpawner`] where the handle is a
+/// [`TryJoinableHandle`]. Auto implemented.
 pub trait ResultThreadSpawner<O>: ThreadSpawner<O>
 where
     Self::ThreadHandle: TryJoinableHandle<Output = O>,
@@ -109,41 +126,49 @@ where
 {
 }
 /// Functions to allow parking functionality for threads.
-pub trait ThreadParker {
+pub trait ThreadParker: Debug {
     /// The type of a thread portable id. Analog for [`std::thread::Thread`].
     type ThreadId: Debug;
 
-    /// Parks the current thread. Analog for [`std::thread::park`]. This may spuriously wake.
+    /// Parks the current thread. Analog for [`std::thread::park`]. This may
+    /// spuriously wake.
     fn park();
     /// Unparks a thread. Analog for [`std::thread::Thread::unpark`].
     fn unpark(thread: Self::ThreadId);
-    /// Gets the handle to the current thread. Analog for [`std::thread::current`].
+    /// Gets the handle to the current thread. Analog for
+    /// [`std::thread::current`].
     fn current_thread() -> Self::ThreadId;
 }
 /// Functions to allow parking functionality with timeout for threads.
 pub trait ThreadTimeoutParker: ThreadParker {
-    /// Parks the current thread with a timeout. Analog to [`std::thread::park_timeout`].
+    /// Parks the current thread with a timeout. Analog to
+    /// [`std::thread::park_timeout`].
     fn park_timeout(timeout: Duration);
 }
 /// A handle to a spawned thread. Analog for [`std::thread::JoinHandle`].
-pub trait ThreadHandle {
+pub trait ThreadHandle: Debug {
     /// The type of a thread portable id. Analog for [`std::thread::Thread`].
     type ThreadId;
 
-    /// Gets a thread id from this handle. Analog for [`std::thread::JoinHandle::thread`].
+    /// Gets a thread id from this handle. Analog for
+    /// [`std::thread::JoinHandle::thread`].
     fn thread_id(&self) -> &Self::ThreadId;
 }
-/// A handle to a spawned thread that can be joined, blocking the current thread until the target is finished. Analog for [`std::thread::JoinHandle`]. If infallibility is needed look to [`JoinableHandle`].
+/// A handle to a spawned thread that can be joined, blocking the current thread
+/// until the target is finished. Analog for [`std::thread::JoinHandle`]. If
+/// infallibility is needed look to [`JoinableHandle`].
 pub trait TryJoinableHandle: Sized + ThreadHandle {
     /// The output of joining this thread.
     type Output;
     /// The possible error when joining this thread,
     type ThreadError;
 
-    /// Tries to join the target thread blocking the current thread. Analog for [`std::thread::JoinHandle::join`].
+    /// Tries to join the target thread blocking the current thread. Analog for
+    /// [`std::thread::JoinHandle::join`].
     fn try_join(self) -> Result<Self::Output, Self::ThreadError>;
 }
-/// A handle to a spawned thread that can be joined infallibly. Auto-implemented with [`TryJoinableHandle`] where possible.
+/// A handle to a spawned thread that can be joined infallibly. Auto-implemented
+/// with [`TryJoinableHandle`] where possible.
 pub trait JoinableHandle: Sized + TryJoinableHandle<ThreadError = Infallible> {
     /// Joins the target thread blocking the current thread.
     #[inline]
@@ -160,7 +185,8 @@ pub trait JoinableHandle: Sized + TryJoinableHandle<ThreadError = Infallible> {
 }
 impl<T> JoinableHandle for T where T: TryJoinableHandle<ThreadError = Infallible> {}
 
-/// A full concurrent system with all functions accessible by reference. This Trait should be implemented where possible.
+/// A full concurrent system with all functions accessible by reference. This
+/// Trait should be implemented where possible.
 pub trait ConcurrentSystem<O>: 'static
 where
     Self: TimeFunctions
@@ -168,12 +194,13 @@ where
         + TryThreadSpawner<O>
         + ThreadParker<
             ThreadId = <<Self as TryThreadSpawner<O>>::ThreadHandle as ThreadHandle>::ThreadId,
-        >,
+        > + Debug,
     O: Send + 'static,
 {
 }
 
-/// Std implementations for [`TimeFunctions`], [`ThreadFunctions], [`TryThreadSpawner`], and [`ThreadParker`].
+/// Std implementations for [`TimeFunctions`], [`ThreadFunctions],
+/// [`TryThreadSpawner`], and [`ThreadParker`].
 #[cfg(feature = "std")]
 #[derive(Copy, Clone, Debug)]
 pub struct StdThreadFunctions;

@@ -7,7 +7,8 @@ use core::time::Duration;
 
 /// A raw rw lock which has guards that can be upgraded on a timeout.
 pub unsafe trait RawUpgradeTimeoutRwLock: RawTryUpgradeRwLock {
-    /// Blocks until lock is changed from read to write (true) or times out (false).
+    /// Blocks until lock is changed from read to write (true) or times out
+    /// (false).
     ///
     /// # Safety
     /// Caller must ensure that a reader exists.

@@ -7,7 +7,8 @@ use core::time::Duration;
 #[cfg(feature = "std")]
 pub type SpinLockStd<T> = SpinLock<T, crate::StdThreadFunctions>;
 
-/// A lock that spins while being locked. Should only be locked for very short operations.
+/// A lock that spins while being locked. Should only be locked for very short
+/// operations.
 pub type SpinLock<T, CS> = CustomMutex<T, RawSpinLock<CS>>;
 /// The raw portion of [`SpinLock`].
 #[derive(Debug)]

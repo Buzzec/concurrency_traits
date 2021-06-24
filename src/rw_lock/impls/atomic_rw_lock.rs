@@ -1,7 +1,8 @@
 use crate::rw_lock::{CustomRwLock, RawDowngradeRwLock, RawTryRwLock, RawTryUpgradeRwLock};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
-/// A read-write lock that only supports try operations ([`TryRwLock`](crate::rw_lock::TryRwLock)).
+/// A read-write lock that only supports try operations
+/// ([`TryRwLock`](crate::rw_lock::TryRwLock)).
 pub type AtomicRwLock<T> = CustomRwLock<T, RawAtomicRwLock>;
 
 /// The raw portion of [`AtomicRwLock`].

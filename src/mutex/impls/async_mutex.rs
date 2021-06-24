@@ -9,16 +9,16 @@ use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 /// ```
 /// # #[cfg(feature = "std")]
 /// # {
-/// use std::ops::Deref;
-/// use concurrency_traits::mutex::{FullAsyncMutex, AsyncMutex};
-/// use std::task::{Context, Waker, Wake};
-/// use std::sync::Arc;
-/// use std::future::Future;
+/// use concurrency_traits::mutex::{AsyncMutex, FullAsyncMutex};
 /// use concurrency_traits::queue::ParkQueueStd;
+/// use std::future::Future;
+/// use std::ops::Deref;
+/// use std::sync::Arc;
+/// use std::task::{Context, Wake, Waker};
 ///
 /// struct NullWaker;
-/// impl Wake for NullWaker{
-///     fn wake(self:Arc<Self>) {
+/// impl Wake for NullWaker {
+///     fn wake(self: Arc<Self>) {
 ///         println!("Wake!");
 ///     }
 /// }
@@ -29,7 +29,10 @@ use simple_futures::complete_future::{CompleteFuture, CompleteFutureHandle};
 ///     assert_eq!(*guard.deref(), 100usize);
 /// });
 ///
-/// assert!(!future.as_mut().poll(&mut Context::from_waker(&Arc::new(NullWaker).into())).is_pending())
+/// assert!(!future
+///     .as_mut()
+///     .poll(&mut Context::from_waker(&Arc::new(NullWaker).into()))
+///     .is_pending())
 /// # }
 /// ```
 pub type FullAsyncMutex<T, Q> = CustomMutex<T, RawFullAsyncMutex<Q>>;

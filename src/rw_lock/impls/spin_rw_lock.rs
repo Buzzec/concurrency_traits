@@ -6,7 +6,8 @@ use crate::{ThreadFunctions, TimeFunctions};
 use core::marker::PhantomData;
 use core::time::Duration;
 
-/// A read-write lock that spins to wait. Should only be locked for short durations.
+/// A read-write lock that spins to wait. Should only be locked for short
+/// durations.
 pub type SpinRwLock<T, CS> = CustomRwLock<T, RawSpinRwLock<CS>>;
 
 /// The raw portion of [`SpinRwLock`].
